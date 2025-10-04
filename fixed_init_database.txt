@@ -1,0 +1,119 @@
+    def init_database(self):
+        """Initialize database with all required tables"""
+        conn = None
+        cursor = None
+        try:
+            # Set timeout to avoid hanging connections
+            conn = sqlite3.connect(self.db_path, timeout=30.0)
+            cursor = conn.cursor()
+            
+            # Users table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS users (
+                    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    email TEXT UNIQUE NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    role TEXT NOT NULL DEFAULT 'viewer',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    last_login TIMESTAMP
+                )
+            ''')
+            
+            # Categories table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS categories (
+                    category_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    category_name TEXT UNIQUE NOT NULL,
+                    skills TEXT
+                )
+            ''')
+            
+            # Providers table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS providers (
+                    provider_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    email TEXT,
+                    phone TEXT,
+                    city TEXT,
+                    state TEXT,
+                    type TEXT NOT NULL,
+                    recruitment_platform TEXT,
+                    latitude REAL,
+                    longitude REAL,
+                    ai_category TEXT,
+                    zipcode TEXT,
+                    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # Provider-Category mapping table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS provider_category_map (
+                    provider_id INTEGER,
+                    category_id INTEGER,
+                    PRIMARY KEY (provider_id, category_id),
+                    FOREIGN KEY (provider_id) REFERENCES providers (provider_id),
+                    FOREIGN KEY (category_id) REFERENCES categories (category_id)
+                )
+            ''')
+            
+            # Sources table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS sources (
+                    source_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    source_name TEXT UNIQUE NOT NULL,
+                    api_key TEXT,
+                    last_run TIMESTAMP,
+                    status TEXT DEFAULT 'inactive'
+                )
+            ''')
+            
+            # Collection logs table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS collection_logs (
+                    log_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    source_name TEXT NOT NULL,
+                    category TEXT,
+                    records_collected INTEGER DEFAULT 0,
+                    success_count INTEGER DEFAULT 0,
+                    error_count INTEGER DEFAULT 0,
+                    status TEXT DEFAULT 'running',
+                    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    completed_at TIMESTAMP,
+                    error_message TEXT
+                )
+            ''')
+            
+            # Settings table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS settings (
+                    setting_key TEXT PRIMARY KEY,
+                    setting_value TEXT,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # Initialize default data
+            self._init_default_data(cursor)
+            
+            # Commit changes
+            conn.commit()
+            
+        except sqlite3.Error as e:
+            app.logger.error(f"Database initialization error: {e}")
+            # If database file exists but is corrupted, try to repair it
+            if os.path.exists(self.db_path):
+                try:
+                    self.check_and_repair_database()
+                except Exception as repair_error:
+                    app.logger.error(f"Failed to repair database during initialization: {repair_error}")
+            raise  # Re-raise the exception after repair attempt
+            
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
