@@ -9,7 +9,7 @@ pandas
 numpy
 fuzzywuzzy
 #python-Levenshtein  # For better performance with fuzzywuzzy
-#spacy
+spacy
 beautifulsoup4
 
 # For Excel file support
@@ -34,4 +34,5 @@ eventlet # For WebSocket support
 # Download spacy model
 
 #python -m spacy download en_core_web_sm
+
 
