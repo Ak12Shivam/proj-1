@@ -8,8 +8,8 @@ Werkzeug
 pandas
 numpy
 fuzzywuzzy
-python-Levenshtein  # For better performance with fuzzywuzzy
-spacy
+#python-Levenshtein  # For better performance with fuzzywuzzy
+#spacy
 beautifulsoup4
 
 # For Excel file support
@@ -29,8 +29,9 @@ requests
 # Extra utilities
 python-socketio
 eventlet # For WebSocket support
-gunicorn # For production deployment
+#gunicorn # For production deployment
 
 # Download spacy model
 
 #python -m spacy download en_core_web_sm
+
