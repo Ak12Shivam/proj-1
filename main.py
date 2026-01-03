@@ -5585,7 +5585,7 @@ if __name__ == '__main__':
         socketio.run(
             app, 
             debug=False, 
-            host='127.0.0.1', 
+            host='0.0.0.1', 
             port=port, 
             use_reloader=False, 
             log_output=True,
@@ -5600,4 +5600,5 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         logger.info("Server stopped by user")
     except Exception as e:
+
         logger.error(f"Unexpected error starting server: {e}")
