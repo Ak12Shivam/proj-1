@@ -1,0 +1,53 @@
+    def _init_default_data(self, cursor):
+        """Initialize default categories and admin user"""
+        # Insert categories
+        for cat_key, cat_name in SERVICE_CATEGORIES.items():
+            cursor.execute('''
+                INSERT OR IGNORE INTO categories (category_name, skills)
+                VALUES (?, ?)
+            ''', (cat_name, cat_key))
+        
+        # Insert sources
+        sources = [
+            'Yelp API', 'Google Maps API', 'LinkedIn API', 'Crunchbase API',
+            'Angi Scraper', 'Thumbtack Scraper', 'Facebook Scraper'
+        ]
+        for source in sources:
+            cursor.execute('INSERT OR IGNORE INTO sources (source_name) VALUES (?)', (source,))
+        
+        # Create default admin user
+        admin_password = generate_password_hash('admin123')
+        cursor.execute('''
+            INSERT OR IGNORE INTO users (name, email, password_hash, role)
+            VALUES (?, ?, ?, ?)
+        ''', ('System Admin', 'admin@demo.com', admin_password, 'admin'))
+        
+        # Create demo manager user
+        manager_password = generate_password_hash('manager123')
+        cursor.execute('''
+            INSERT OR IGNORE INTO users (name, email, password_hash, role)
+            VALUES (?, ?, ?, ?)
+        ''', ('Manager Demo', 'manager@demo.com', manager_password, 'manager'))
+        
+        # Create demo regular user
+        user_password = generate_password_hash('user123')
+        cursor.execute('''
+            INSERT OR IGNORE INTO users (name, email, password_hash, role)
+            VALUES (?, ?, ?, ?)
+        ''', ('User Demo', 'user@demo.com', user_password, 'viewer'))
+        
+        # Insert sample providers for demonstration
+        sample_providers = [
+            ('Clean Pro Services', 'contact@cleanpro.com', '5551234567', 'Los Angeles', 'CA', 'business', 'Yelp', 34.0522, -118.2437, 'residential-cleaning', 92),
+            ('John Smith HVAC', 'john@hvacsmith.com', '5559876543', 'Houston', 'TX', 'individual', 'LinkedIn', 29.7604, -95.3698, 'hvac', 87),
+            ('Elite Plumbing Co', 'info@eliteplumbing.com', '5554567890', 'New York', 'NY', 'business', 'Google Maps', 40.7128, -74.0060, 'plumbers', 95),
+            ('Mike\'s Electrical', 'mike@electrical.com', '5553216540', 'Chicago', 'IL', 'business', 'Angi', 41.8781, -87.6298, 'electricians', 89),
+            ('Sarah Window Cleaning', 'sarah@windowclean.com', '5557891234', 'Phoenix', 'AZ', 'individual', 'Thumbtack', 33.4484, -112.0740, 'window-cleaning', 78)
+        ]
+        
+        for provider in sample_providers:
+            cursor.execute('''
+                INSERT OR IGNORE INTO providers 
+                (name, email, phone, city, state, type, recruitment_platform, latitude, longitude, ai_category, confidence)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', provider)

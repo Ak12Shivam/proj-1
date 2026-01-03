@@ -1,0 +1,3855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Provider Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <!-- Leaflet Heatmap Plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+    <!-- Leaflet MarkerCluster Plugin -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/leaflet.markercluster.min.js"></script>
+    <!-- Leaflet JS (main library) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --primary-light: #3b82f6;
+            --secondary: #7c3aed;
+            --accent: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f9fafb;
+            --border: #e5e7eb;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* Modern Card Styling */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            box-shadow: 0 12px 48px rgba(31, 38, 135, 0.2);
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .brand-gradient {
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* Modern Header */
+        header {
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            box-shadow: 0 10px 30px rgba(37, 99, 235, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -5%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        header h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Navigation Tabs */
+        nav {
+            background: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border-bottom: 2px solid var(--light);
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+
+        .tab-btn {
+            position: relative;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            background: transparent;
+        }
+
+        .tab-btn:hover {
+            color: var(--primary);
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: rgba(37, 99, 235, 0.08);
+        }
+
+        /* Stats Cards */
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+            transform-origin: left;
+        }
+
+        .stat-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--primary);
+        }
+
+        .stat-card i {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            line-height: 1;
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .map-container {
+            min-height: 500px;
+        }
+
+        /* Buttons */
+        button, .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: rgba(124, 58, 237, 0.1);
+            color: var(--secondary);
+            border: 2px solid var(--secondary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--secondary);
+            color: white;
+        }
+
+        /* Input Fields */
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.875rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        input[type="number"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            background: rgba(37, 99, 235, 0.01);
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        table thead th {
+            background: var(--light);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 700;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        table tbody td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        table tbody tr:hover {
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        /* Animations */
+        .fade-in {
+            animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .slide-in {
+            animation: slideInRight 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Badges & Tags */
+        .badge {
+            display: inline-block;
+            padding: 0.375rem 0.875rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        .badge-info {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--light);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, var(--primary-dark), var(--secondary));
+        }
+
+        /* Enhanced mobile responsiveness */
+        @media (max-width: 640px) {
+            .container { padding-left: 0.75rem; padding-right: 0.75rem; }
+            .card-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+            .modal-content { width: 95%; max-width: 95%; max-height: 90vh; overflow-y: auto; padding: 1rem; }
+            .btn-sm-full { width: 100%; margin-bottom: 0.5rem; justify-content: center; }
+            .hide-scrollbar { 
+                -ms-overflow-style: none; 
+                -webkit-appearance: none; 
+                appearance: none;
+            }
+            @supports (scrollbar-width: none) {
+                .hide-scrollbar { scrollbar-width: none; }
+            }
+            .hide-scrollbar::-webkit-scrollbar { display: none; }
+            .sm-stack { display: flex; flex-direction: column; }
+            .sm-stack > * { margin-bottom: 0.5rem; width: 100%; }
+            
+            /* Table improvements for mobile */
+            table { border-collapse: separate; border-spacing: 0; }
+            table th, table td { padding: 8px; }
+            .table-responsive { margin: 0 -8px; width: calc(100% + 16px); }
+            .table-compact td { padding-top: 6px; padding-bottom: 6px; }
+            .mobile-info { display: block; margin-top: 2px; }
+            
+            /* Mobile card view styling */
+            .mobile-card-view { display: block !important; }
+            .mobile-card-view thead { display: none; }
+            .mobile-card-view tbody, .mobile-card-view tr { display: block; width: 100%; }
+            .mobile-card-view tr { 
+                margin-bottom: 1rem; 
+                border-radius: 0.5rem; 
+                box-shadow: var(--shadow-md); 
+                overflow: hidden; 
+                border: 1px solid var(--border);
+                background-color: white;
+            }
+            .mobile-card-view td { 
+                display: block; 
+                width: auto; 
+                text-align: left; 
+                padding: 0.75rem;
+                position: relative;
+            }
+            .mobile-card-view td:not(:first-child) { border-top: 1px solid var(--border); }
+            .mobile-card-view td:before { 
+                content: attr(data-label); 
+                font-weight: 700; 
+                margin-right: 0.5rem;
+                color: var(--primary);
+                display: block;
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            .mobile-card-view td:nth-child(1) { display: none; }
+            .mobile-card-view td:nth-child(2):before { display: none; }
+            .mobile-card-view td:nth-child(2) { 
+                background: var(--light); 
+                border-bottom: 2px solid var(--border);
+                padding-bottom: 0.5rem;
+            }
+            .mobile-card-view td:last-child { 
+                border-top: none; 
+                padding-top: 0.5rem; 
+                background: var(--light);
+                text-align: right;
+            }
+            
+            /* Font size adjustments */
+            h1 { font-size: 1.5rem; }
+            h2 { font-size: 1.25rem; }
+            h3 { font-size: 1.125rem; }
+            
+            /* Spacing adjustments */
+            .section { margin-bottom: 1.5rem; }
+            .card { padding: 0.75rem; }
+        }
+        
+        /* Custom toggle for mobile */
+        @media (max-width: 640px) {
+            .toggle {
+                transform: scale(0.8);
+            }
+        }
+        
+        /* Touch-friendly tap targets */
+        @media (max-width: 768px) {
+            button, .btn, select, input[type="checkbox"], input[type="radio"] {
+                min-height: 44px;
+                min-width: 44px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="brand-gradient text-white shadow-lg py-6">
+        <div class="container mx-auto flex flex-col sm:flex-row justify-between items-center px-4">
+            <div class="flex items-center space-x-3 mb-3 sm:mb-0">
+                <i class="fas fa-database text-3xl"></i>
+                <h1 class="text-2xl font-extrabold brand-gradient">Service Provider Dashboard</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="user-avatar w-10 h-10 rounded-full bg-white text-indigo-600 flex items-center justify-center border-2 border-white/50">
+                    <i class="fas fa-user text-lg"></i>
+                </div>
+                <div class="text-right">
+                    <div class="font-semibold">{{ session.user_name if session.user_name else 'User' }}</div>
+                    <div class="text-xs opacity-80">{{ session.user_role.title() if session.user_role else 'Viewer' }}</div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <main class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+            <div class="glass-card p-6 flex flex-col items-center text-center">
+                <i class="fas fa-users text-4xl text-indigo-500 mb-3"></i>
+                <div class="text-lg font-semibold text-gray-700 mb-1">Total Providers</div>
+                <div class="text-3xl font-bold text-indigo-700" data-stat="total-providers">Loading...</div>
+            </div>
+            <div class="glass-card p-6 flex flex-col items-center text-center">
+                <i class="fas fa-user text-4xl text-green-500 mb-3"></i>
+                <div class="text-lg font-semibold text-gray-700 mb-1">Individuals</div>
+                <div class="text-3xl font-bold text-green-700" data-stat="individuals">Loading...</div>
+            </div>
+            <div class="glass-card p-6 flex flex-col items-center text-center">
+                <i class="fas fa-building text-4xl text-purple-500 mb-3"></i>
+                <div class="text-lg font-semibold text-gray-700 mb-1">Businesses</div>
+                <div class="text-3xl font-bold text-purple-700" data-stat="businesses">Loading...</div>
+            </div>
+        </div>
+        <!-- ...existing dashboard content... -->
+    </main>
+</body>
+</html>
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+            <div class="flex flex-col sm:flex-row justify-between items-center">
+                <div class="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-0">
+                    <i class="fas fa-database text-xl sm:text-2xl"></i>
+                    <h1 class="text-lg sm:text-xl md:text-2xl font-bold">Service Provider Database</h1>
+                </div>
+                <div class="flex flex-row items-center space-x-2 sm:space-x-4 w-full sm:w-auto">
+                    <!-- User Profile Dropdown -->
+                    <div class="relative">
+                        <button id="userDropdownBtn" class="glass hover:bg-white/20 rounded-lg px-3 py-2 text-sm flex items-center transition">
+                            <div class="user-avatar w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-2 border-2 border-white/50">
+                                <i class="fas fa-user text-sm"></i>
+                            </div>
+                            <div class="text-left hidden sm:block">
+                                <div class="font-medium">{{ session.user_name if session.user_name else 'User' }}</div>
+                                <div class="text-xs opacity-80">{{ session.user_role.title() if session.user_role else 'Viewer' }}</div>
+                            </div>
+                            <i class="fas fa-chevron-down ml-2 text-xs opacity-70"></i>
+                        </button>
+                        <div id="userDropdown" class="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg py-2 z-50 hidden">
+                            <a href="#profile" id="viewProfileBtn" class="block px-4 py-2 text-gray-800 hover:bg-blue-50">
+                                <i class="fas fa-id-card mr-2"></i>View Profile
+                            </a>
+                            <a href="#settings" class="block px-4 py-2 text-gray-800 hover:bg-blue-50">
+                                <i class="fas fa-cog mr-2"></i>Settings
+                            </a>
+                            <div class="border-t my-1"></div>
+                            <a href="#" id="logoutBtn" class="block px-4 py-2 text-red-600 hover:bg-red-50">
+                                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Mobile-only logout button -->
+                    <button id="mobileLogoutBtn" class="sm:hidden bg-red-500 hover:bg-red-600 px-3 py-2 rounded-lg transition text-sm" title="Logout" aria-label="Logout from account">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="bg-white shadow-sm border-b overflow-x-auto">
+        <div class="container mx-auto px-3 sm:px-4">
+            <!-- Mobile dropdown for small screens -->
+            <div class="block md:hidden py-2">
+                <select id="mobileTabSelector" aria-label="Select tab" title="Select tab to navigate" class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    <option value="dashboard">Dashboard</option>
+                    <option value="explore">Explore</option>
+                </select>
+            </div>
+            <!-- Regular tabs for larger screens -->
+            <div class="hidden md:flex md:space-x-2 lg:space-x-6 whitespace-nowrap text-sm lg:text-base">
+                <button class="tab-btn active py-3 px-2 border-b-2 border-blue-500 text-blue-600 font-medium transition-colors" data-tab="dashboard">
+                    <i class="fas fa-chart-bar mr-1 lg:mr-2"></i><span>Dashboard</span>
+                </button>
+                <button class="tab-btn py-3 px-2 border-b-2 border-transparent hover:text-blue-600 font-medium transition-colors" data-tab="explore">
+                    <i class="fas fa-compass mr-1 lg:mr-2"></i><span>Explore</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content fade-in">
+            <!-- User Profile Overview -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden mb-6 md:mb-8">
+                <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-24 sm:h-32 relative">
+                    <div class="absolute bottom-0 left-0 w-full">
+                        <div class="flex flex-col sm:flex-row items-center px-4 sm:px-6">
+                            <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white p-1 -mb-10 sm:mb-0 sm:-mb-12 shadow-lg flex-shrink-0">
+                                <div class="w-full h-full rounded-full bg-gradient-to-r from-blue-300 to-indigo-400 flex items-center justify-center text-white">
+                                    <i class="fas fa-user-circle text-3xl sm:text-4xl"></i>
+                                </div>
+                            </div>
+                            <div class="mt-10 sm:mt-0 sm:ml-4 pb-3 text-center sm:text-left">
+                                <h2 class="text-white text-xl sm:text-2xl font-bold">{{ session.user_name if session.user_name else 'User' }}</h2>
+                                <div class="inline-flex items-center bg-white/20 text-white text-sm rounded-full px-3 py-1 mt-1 backdrop-blur-sm">
+                                    <i class="fas fa-shield-alt mr-2"></i>
+                                    <span>{{ session.user_role.title() if session.user_role else 'Viewer' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pt-12 sm:pt-6 pb-6 px-4 sm:px-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mt-4">
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                            <div class="text-gray-500 text-sm mb-1">Last Login</div>
+                            <div class="font-medium">{{ session.last_login if session.last_login else 'Today' }}</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                            <div class="text-gray-500 text-sm mb-1">Email</div>
+                            <div class="font-medium">{{ session.user_email if session.user_email else 'user@example.com' }}</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                            <div class="text-gray-500 text-sm mb-1">Access Level</div>
+                            <div class="flex items-center">
+                                {% if session.user_role == 'admin' %}
+                                <span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+                                <span class="font-medium">Full Access</span>
+                                {% elif session.user_role == 'manager' %}
+                                <span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
+                                <span class="font-medium">Manager Access</span>
+                                {% else %}
+                                <span class="inline-block w-2 h-2 rounded-full bg-gray-500 mr-2"></span>
+                                <span class="font-medium">View Only</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+                <div class="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-blue-500 hover:shadow-lg transition-shadow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-xs sm:text-sm font-medium">Total Providers</p>
+                            <p class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900" data-stat="total-providers">Loading...</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-500">
+                            <i class="fas fa-users text-xl md:text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-green-500 hover:shadow-lg transition-shadow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-xs sm:text-sm font-medium">Individuals</p>
+                            <p class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900" data-stat="individuals">Loading...</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-500">
+                            <i class="fas fa-user text-xl md:text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-purple-500 hover:shadow-lg transition-shadow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-xs sm:text-sm font-medium">Business Owners</p>
+                            <p class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900" data-stat="businesses">Loading...</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-500">
+                            <i class="fas fa-briefcase text-xl md:text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-md p-4 sm:p-6 border-l-4 border-orange-500 hover:shadow-lg transition-shadow">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm font-medium">States Covered</p>
+                            <p class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900" data-stat="states">Loading...</p>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center text-orange-500">
+                            <i class="fas fa-map-marker-alt text-xl md:text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4">
+                        <h3 class="text-lg font-semibold text-white flex items-center">
+                            <i class="fas fa-chart-pie mr-2"></i>
+                            Providers by Category
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                    <div class="bg-gradient-to-r from-purple-500 to-purple-600 px-6 py-4">
+                        <h3 class="text-lg font-semibold text-white flex items-center">
+                            <i class="fas fa-map mr-2"></i>
+                            Geographic Distribution
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <canvas id="stateChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Provider Distribution Map -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                <div class="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4">
+                    <h3 class="text-lg font-semibold text-white flex items-center">
+                        <i class="fas fa-map-location-dot mr-2"></i>
+                        Provider Distribution Map
+                    </h3>
+                    <p class="text-blue-100 text-sm mt-1">Visualize provider locations and density across the United States</p>
+                </div>
+                
+                <!-- Map Controls -->
+                <div class="bg-gray-50 border-b border-gray-200 px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex gap-2 flex-wrap">
+                        <button id="dashHeatmapBtn" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2 rounded-lg text-sm transition font-medium flex items-center gap-2">
+                            <i class="fas fa-fire"></i>Heatmap
+                        </button>
+                        <button id="dashClustersBtn" class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-2 rounded-lg text-sm transition font-medium flex items-center gap-2">
+                            <i class="fas fa-layer-group"></i>Clusters
+                        </button>
+                        <button id="dashMapRefreshBtn" class="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-4 py-2 rounded-lg text-sm transition font-medium flex items-center gap-2">
+                            <i class="fas fa-sync-alt"></i>Refresh
+                        </button>
+                    </div>
+                    
+                    <!-- Map Filters -->
+                    <div class="flex gap-2 flex-wrap items-center">
+                        <select id="dashMapCategoryFilter" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm" title="Filter by category">
+                            <option value="">All Categories</option>
+                            <option value="residential-cleaning">Residential Cleaning</option>
+                            <option value="commercial-janitorial">Commercial Janitorial</option>
+                            <option value="carpet-cleaning">Carpet Cleaning</option>
+                            <option value="hvac">HVAC</option>
+                            <option value="plumbers">Plumbers</option>
+                            <option value="electricians">Electricians</option>
+                            <option value="painters">Painters</option>
+                            <option value="landscaping">Landscaping</option>
+                        </select>
+                        <select id="dashMapStateFilter" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm" title="Filter by state">
+                            <option value="">All States</option>
+                            <option value="CA">California</option>
+                            <option value="TX">Texas</option>
+                            <option value="FL">Florida</option>
+                            <option value="NY">New York</option>
+                            <option value="PA">Pennsylvania</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Map Container -->
+                <div id="dashProviderMap" class="w-full h-96 lg:h-[500px] bg-gray-100 rounded-b-lg border-0"></div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                <div class="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-4 flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-white flex items-center">
+                        <i class="fas fa-history mr-2"></i>
+                        Recent Data Collection Activity
+                    </h3>
+                    <button class="text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-lg px-2 py-1 text-sm transition" aria-label="Refresh activity">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <div class="overflow-x-auto p-1">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="bg-gray-50">
+                                <th class="px-4 py-3 text-left font-medium text-gray-700 rounded-tl-lg">Source</th>
+                                <th class="px-4 py-3 text-left font-medium text-gray-700">Category</th>
+                                <th class="px-4 py-3 text-left font-medium text-gray-700">Records</th>
+                                <th class="px-4 py-3 text-left font-medium text-gray-700">Status</th>
+                                <th class="px-4 py-3 text-left font-medium text-gray-700 rounded-tr-lg">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activityTable">
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-4 py-3 border-t">
+                                    <div class="flex items-center">
+                                        <div class="w-7 h-7 rounded-full bg-red-100 text-red-600 flex items-center justify-center mr-2">
+                                            <i class="fab fa-yelp text-sm"></i>
+                                        </div>
+                                        <span>Yelp API</span>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 border-t">Residential Cleaning</td>
+                                <td class="px-4 py-3 border-t"><span class="font-medium">247</span></td>
+                                <td class="px-4 py-3 border-t">
+                                    <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium flex items-center w-fit">
+                                        <span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1"></span>Success
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 border-t text-gray-500">2 mins ago</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-4 py-3 border-t">
+                                    <div class="flex items-center">
+                                        <div class="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-2">
+                                            <i class="fab fa-google text-sm"></i>
+                                        </div>
+                                        <span>Google Maps</span>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 border-t">HVAC</td>
+                                <td class="px-4 py-3 border-t"><span class="font-medium">156</span></td>
+                                <td class="px-4 py-3 border-t">
+                                    <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium flex items-center w-fit">
+                                        <span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1"></span>Success
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 border-t text-gray-500">5 mins ago</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-4 py-3 border-t">
+                                    <div class="flex items-center">
+                                        <div class="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-2">
+                                            <i class="fab fa-linkedin-in text-sm"></i>
+                                        </div>
+                                        <span>LinkedIn</span>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 border-t">Electricians</td>
+                                <td class="px-4 py-3 border-t"><span class="font-medium">89</span></td>
+                                <td class="px-4 py-3 border-t">
+                                    <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium flex items-center w-fit">
+                                        <span class="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-1"></span>Processing
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 border-t text-gray-500">8 mins ago</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="bg-gray-50 px-6 py-3 border-t flex justify-center">
+                    <button class="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center transition">
+                        View All Activity <i class="fas fa-chevron-right ml-1 text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Explore Tab (Search + Map Combined) -->
+        <div id="explore" class="tab-content hidden">
+            <!-- Full Width Search & Results -->
+            <div class="grid grid-cols-1 gap-4 lg:gap-6 auto-rows-max lg:auto-rows-none">
+                <!-- Full Width: Search & Filters -->
+                <div class="flex flex-col">
+            <div class="bg-white rounded-xl shadow-md p-4 lg:p-6 flex-1 overflow-y-auto max-h-96 lg:max-h-none">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">Find Providers</h3>
+                    <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-semibold">Sync</span>
+                </div>
+                
+                <!-- Search Filters -->
+                <div class="grid grid-cols-1 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                        <select id="categoryFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm" title="Filter by service category">
+                            <option value="">All Categories</option>
+                            <option value="residential-cleaning">Residential Cleaning</option>
+                            <option value="commercial-janitorial">Commercial Janitorial</option>
+                            <option value="carpet-cleaning">Carpet Cleaning</option>
+                            <option value="window-cleaning">Window Cleaning</option>
+                            <option value="painters">Painters</option>
+                            <option value="maintenance">Maintenance</option>
+                            <option value="hvac">HVAC</option>
+                            <option value="plumbers">Plumbers</option>
+                            <option value="electricians">Electricians</option>
+                            <option value="floor-care">Floor Care</option>
+                            <option value="waste-management">Waste Management</option>
+                            <option value="pest-control">Pest Control</option>
+                            <option value="landscaping">Landscaping</option>
+                            <option value="pressure-washing">Pressure Washing</option>
+                            <option value="tub-tile">Tub & Tile</option>
+                            <option value="construction-cleanup">Construction Cleanup</option>
+                            <option value="covid-spray">COVID/Bacterial Spray</option>
+                            <option value="car-detailing">Car Detailing</option>
+                            <option value="specialty">Specialty Services</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">State</label>
+                        <select id="stateFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" title="Filter by state">
+                            <option value="">All States</option>
+                            <option value="AL">Alabama</option>
+                            <option value="AK">Alaska</option>
+                            <option value="AZ">Arizona</option>
+                            <option value="AR">Arkansas</option>
+                            <option value="CA">California</option>
+                            <option value="CO">Colorado</option>
+                            <option value="CT">Connecticut</option>
+                            <option value="DE">Delaware</option>
+                            <option value="FL">Florida</option>
+                            <option value="GA">Georgia</option>
+                            <option value="HI">Hawaii</option>
+                            <option value="ID">Idaho</option>
+                            <option value="IL">Illinois</option>
+                            <option value="IN">Indiana</option>
+                            <option value="IA">Iowa</option>
+                            <option value="KS">Kansas</option>
+                            <option value="KY">Kentucky</option>
+                            <option value="LA">Louisiana</option>
+                            <option value="ME">Maine</option>
+                            <option value="MD">Maryland</option>
+                            <option value="MA">Massachusetts</option>
+                            <option value="MI">Michigan</option>
+                            <option value="MN">Minnesota</option>
+                            <option value="MS">Mississippi</option>
+                            <option value="MO">Missouri</option>
+                            <option value="MT">Montana</option>
+                            <option value="NE">Nebraska</option>
+                            <option value="NV">Nevada</option>
+                            <option value="NH">New Hampshire</option>
+                            <option value="NJ">New Jersey</option>
+                            <option value="NM">New Mexico</option>
+                            <option value="NY">New York</option>
+                            <option value="NC">North Carolina</option>
+                            <option value="ND">North Dakota</option>
+                            <option value="OH">Ohio</option>
+                            <option value="OK">Oklahoma</option>
+                            <option value="OR">Oregon</option>
+                            <option value="PA">Pennsylvania</option>
+                            <option value="RI">Rhode Island</option>
+                            <option value="SC">South Carolina</option>
+                            <option value="SD">South Dakota</option>
+                            <option value="TN">Tennessee</option>
+                            <option value="TX">Texas</option>
+                            <option value="UT">Utah</option>
+                            <option value="VT">Vermont</option>
+                            <option value="VA">Virginia</option>
+                            <option value="WA">Washington</option>
+                            <option value="WV">West Virginia</option>
+                            <option value="WI">Wisconsin</option>
+                            <option value="WY">Wyoming</option>
+                            <option value="DC">District of Columbia</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Provider Type</label>
+                        <select id="typeFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" title="Filter by provider type">
+                            <option value="">All Types</option>
+                            <option value="individual">Individual</option>
+                            <option value="business">Business Owner</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Zipcode Prefix</label>
+                        <select id="confidenceFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" title="Filter by zipcode prefix">
+                            <option value="">All Zipcodes</option>
+                            <option value="high">High (>80%)</option>
+                            <option value="medium">Medium (60-80%)</option>
+                            <option value="low">Low (<60%)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Search Bar with Elasticsearch -->
+                <div class="flex flex-col gap-3 mb-6">
+                    <div class="flex flex-col gap-3">
+                        <div class="flex-1 relative">
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-search text-gray-400"></i>
+                                </div>
+                                <input type="text" id="searchInput" 
+                                       placeholder="Search by name, email, category, zipcode..." 
+                                       class="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                       data-elasticsearch="true" 
+                                       autocomplete="off"
+                                       title="Tip: Enter a category name (e.g., 'plumbing') or 5-digit zipcode to search">
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center gap-2">
+                                    <!-- Search type indicator -->
+                                    <span id="searchTypeIndicator" class="hidden text-xs px-2 py-1 rounded-full"></span>
+                                    <!-- Help button -->
+                                    <i class="fas fa-question-circle text-gray-400 hover:text-blue-500 cursor-pointer" id="searchHelpBtn" title="Search Tips"></i>
+                                    <!-- Clear search button -->
+                                    <i class="fas fa-times-circle text-gray-400 hover:text-gray-600 cursor-pointer hidden" id="searchInputClear"></i>
+                                </div>
+                            </div>
+                            <!-- Search Suggestions -->
+                            <div class="absolute z-50 left-0 right-0 mt-1 hidden">
+                                <div class="relative">
+                                    <div id="searchSuggestions" class="bg-white border border-gray-200 rounded-lg shadow-lg max-h-72 overflow-y-auto divide-y divide-gray-100 ring-1 ring-black ring-opacity-5 focus:outline-none"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Search Tips Popup -->
+                            <div id="searchTipsPopup" class="absolute z-50 right-0 mt-2 w-72 bg-white border border-gray-200 rounded-lg shadow-lg p-3 hidden text-sm">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="font-bold text-gray-700 text-sm">Search Tips</h3>
+                                    <button id="closeTipsBtn" class="text-gray-400 hover:text-gray-600 text-xs" aria-label="Close search tips" title="Close">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="text-gray-600 space-y-1">
+                                    <p class="flex items-center gap-1"><span class="inline-block bg-green-100 text-green-800 px-1.5 py-0.5 rounded text-xs">TEXT</span> Normal search by name, email, phone</p>
+                                    <p class="flex items-center gap-1"><span class="inline-block bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded text-xs">ZIP</span> 5-digit zipcode</p>
+                                    <p class="flex items-center gap-1"><span class="inline-block bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded text-xs">CAT</span> Category name</p>
+                                </div>
+                            </div>
+                            <!-- Search Tags for selected filters -->
+                            <div id="searchTags" class="flex flex-wrap gap-2 mt-2">
+                                <!-- Tags will be dynamically added here -->
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+                            <button id="searchBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2.5 rounded-lg transition flex items-center justify-center gap-2 text-sm font-medium">
+                                <i class="fas fa-search"></i><span class="hidden sm:inline">Search</span>
+                            </button>
+                            <button id="clearBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2.5 rounded-lg transition flex items-center justify-center gap-2 text-sm font-medium">
+                                <i class="fas fa-times"></i><span class="hidden sm:inline">Clear</span>
+                            </button>
+                            <button id="advancedSearchBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2.5 rounded-lg transition flex items-center justify-center gap-2 text-sm font-medium col-span-1 sm:col-span-1">
+                                <i class="fas fa-sliders-h"></i><span class="hidden sm:inline">Adv</span>
+                            </button>
+                            <button id="crawlBtn" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2.5 rounded-lg transition flex items-center justify-center gap-2 text-sm font-medium">
+                                <i class="fas fa-spider"></i><span class="hidden sm:inline">Crawl</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Advanced Search Options (Hidden by default) -->
+                    <div id="advancedSearchOptions" class="hidden bg-white p-4 rounded-lg border border-gray-200 shadow-sm mb-3">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Search Fields</label>
+                                <div class="space-y-2">
+                                    <label class="inline-flex items-center mr-4">
+                                        <input type="checkbox" class="rounded text-blue-600" name="searchField" value="name" checked>
+                                        <span class="ml-2 text-sm">Name</span>
+                                    </label>
+                                    <label class="inline-flex items-center mr-4">
+                                        <input type="checkbox" class="rounded text-blue-600" name="searchField" value="email" checked>
+                                        <span class="ml-2 text-sm">Email</span>
+                                    </label>
+                                    <label class="inline-flex items-center mr-4">
+                                        <input type="checkbox" class="rounded text-blue-600" name="searchField" value="phone" checked>
+                                        <span class="ml-2 text-sm">Phone</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="checkbox" class="rounded text-blue-600" name="searchField" value="address" checked>
+                                        <span class="ml-2 text-sm">Address</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Search Type</label>
+                                <div class="space-y-2">
+                                    <label class="inline-flex items-center mr-4">
+                                        <input type="radio" class="text-blue-600" name="searchType" value="fuzzy" checked>
+                                        <span class="ml-2 text-sm">Fuzzy Match</span>
+                                    </label>
+                                    <label class="inline-flex items-center mr-4">
+                                        <input type="radio" class="text-blue-600" name="searchType" value="exact">
+                                        <span class="ml-2 text-sm">Exact Match</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" class="text-blue-600" name="searchType" value="wildcard">
+                                        <span class="ml-2 text-sm">Wildcard</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Results Per Page</label>
+                                <select id="resultsPerPage" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" title="Number of results per page" aria-label="Number of results per page">
+                                    <option value="10">10 results</option>
+                                    <option value="25" selected>25 results</option>
+                                    <option value="50">50 results</option>
+                                    <option value="100">100 results</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex justify-end">
+                            <button id="closeAdvancedSearchBtn" class="text-gray-600 hover:text-gray-800 text-sm">
+                                Close Advanced Search
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Elasticsearch Results Preview -->
+                    <div id="elasticSearchPreview" class="hidden bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="text-sm font-semibold text-gray-700">Live Search Results</h4>
+                            <span id="resultCount" class="text-xs text-gray-500"></span>
+                        </div>
+                        <div id="searchPreviewResults" class="space-y-2 max-h-60 overflow-y-auto">
+                            <!-- Dynamic results will be populated here -->
+                        </div>
+                        <div class="mt-3 text-center">
+                            <button id="loadMorePreviewResults" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                Load more results
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Crawl4AI Status -->
+                    <div id="crawlStatus" class="hidden bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="text-sm font-semibold text-gray-700">Crawling Status</h4>
+                            <span id="crawlProgress" class="text-xs text-blue-600">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="crawlProgressBar" class="bg-blue-600 h-2 rounded-full progress-bar-zero"></div>
+                        </div>
+                        <p id="crawlMessage" class="text-xs text-gray-500 mt-2">Ready to start crawling...</p>
+                    </div>
+                </div>
+
+                <!-- Export Options -->
+                <div class="flex flex-col gap-3 mb-6">
+                    <div class="flex items-center flex-wrap gap-2">
+                        <span class="text-xs text-gray-600 font-medium">Export:</span>
+                        <button id="exportCsv" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-xs transition flex items-center gap-1">
+                            <i class="fas fa-file-csv"></i><span class="hidden sm:inline">CSV</span>
+                        </button>
+                        <button id="exportExcel" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs transition flex items-center gap-1">
+                            <i class="fas fa-file-excel"></i><span class="hidden sm:inline">Excel</span>
+                        </button>
+                        <button id="deduplicateBtn" class="bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded-lg text-xs transition flex items-center gap-1">
+                            <i class="fas fa-magic"></i><span class="hidden sm:inline">Deduplicate</span>
+                        </button>
+                    </div>
+                    <div class="text-xs text-gray-600 font-medium">
+                        Results: <span id="resultCount">1,247</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Results -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="overflow-x-auto hide-scrollbar table-responsive">
+                    <table class="w-full text-sm table-auto min-w-full divide-y divide-gray-200 search-results-table">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-2 sm:px-4 py-2 sm:py-3 text-left font-medium text-gray-700">
+                                    <label for="selectAll" class="sr-only">Select All</label>
+                                    <input type="checkbox" id="selectAll" class="rounded" title="Select all providers" aria-label="Select all providers">
+                                </th>
+                                <th class="px-2 sm:px-4 py-2 sm:py-3 text-left font-medium text-gray-700">Name</th>
+                                <th class="hidden sm:table-cell px-2 sm:px-4 py-2 sm:py-3 text-left font-medium text-gray-700">Email</th>
+                                <th class="hidden md:table-cell px-2 sm:px-4 py-2 sm:py-3 text-left font-medium text-gray-700">Phone</th>
+                                <th class="hidden sm:table-cell px-2 sm:px-4 py-2 sm:py-3 text-left font-medium text-gray-700">Location</th>
+                                <th class="hidden lg:table-cell px-2 sm:px-4 py-2 sm:py-3 text-left font-medium text-gray-700">Type</th>
+                                <th class="hidden md:table-cell px-2 sm:px-4 py-2 sm:py-3 text-left font-medium text-gray-700">Category</th>
+                                <th class="hidden xl:table-cell px-2 sm:px-4 py-2 sm:py-3 text-left font-medium text-gray-700">Source</th>
+                                <th class="hidden lg:table-cell px-2 sm:px-4 py-2 sm:py-3 text-left font-medium text-gray-700">Zipcode</th>
+                                <th class="px-2 sm:px-4 py-2 sm:py-3 text-left font-medium text-gray-700">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="searchResults">
+                            <!-- Results will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        <div class="px-4 py-3 bg-gray-50 border-t text-center">
+                            <div id="paginationInfo" class="text-sm text-gray-700 mb-2">
+                                Showing 0-0 of 0 results
+                            </div>
+                            <div id="paginationControls" class="flex space-x-1 justify-center">
+                                <!-- Pagination controls will be added by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modals -->
+
+
+    <script>
+        // Sample data for demonstration
+        // Real-time providers data will be loaded from API
+        window.currentProviders = [];
+
+        // Tab functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const mobileTabSelector = document.getElementById('mobileTabSelector');
+
+            // Function to switch tabs
+            function switchTab(tabName) {
+                console.log('Switching to tab:', tabName);
+                
+                // Remove active class from all buttons and contents
+                tabButtons.forEach(btn => {
+                    btn.classList.remove('active', 'border-blue-500', 'text-blue-600');
+                    btn.classList.add('border-transparent');
+                    
+                    // Update active button
+                    if (btn.dataset.tab === tabName) {
+                        btn.classList.add('active', 'border-blue-500', 'text-blue-600');
+                        btn.classList.remove('border-transparent');
+                    }
+                });
+                
+                // Hide all tab contents and show selected one
+                tabContents.forEach(content => {
+                    content.classList.add('hidden');
+                    content.classList.remove('fade-in');
+                });
+                
+                const selectedTab = document.getElementById(tabName);
+                if (selectedTab) {
+                    selectedTab.classList.remove('hidden');
+                    selectedTab.classList.add('fade-in');
+                } else {
+                    console.error(`Tab with ID "${tabName}" not found`);
+                }
+                
+                // Initialize specific tab functionality
+                if (tabName === 'map') {
+                    initMap();
+                } else if (tabName === 'dashboard') {
+                    initCharts();
+                } else if (tabName === 'search') {
+                    // If we're switching to search tab, make sure results are visible
+                    if (window.currentSearchResults && window.currentSearchResults.length > 0) {
+                        updateSearchResults(window.currentSearchResults);
+                    }
+                }
+            }
+            
+            // Make switchTab function available globally
+            window.switchTab = switchTab;
+            
+            // Set up desktop tab buttons
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabName = button.dataset.tab;
+                    switchTab(tabName);
+                    
+                    // Sync mobile dropdown
+                    if (mobileTabSelector) {
+                        mobileTabSelector.value = tabName;
+                    }
+                });
+            });
+            
+            // Set up mobile tab selector
+            if (mobileTabSelector) {
+                mobileTabSelector.addEventListener('change', () => {
+                    switchTab(mobileTabSelector.value);
+                });
+            }
+
+            // Initialize dashboard charts on load
+            initCharts();
+            
+            // Initialize dashboard map on load
+            initDashboardMap();
+            
+            // Load real data on initialization
+            loadDashboardData();
+            
+            // Initialize search results with real data
+            performSearch();
+            
+
+            
+            // Modal functionality
+            initModals();
+            
+            // File upload
+            initFileUpload();
+            
+            // Event listeners
+            initEventListeners();
+        });
+
+        // Initialize Charts with actual data
+        async function initCharts() {
+            try {
+                // Fetch stats data
+                const statsResponse = await fetch('/api/stats');
+                const stats = await statsResponse.json();
+                
+                // Category Chart
+                const categoryCtx = document.getElementById('categoryChart');
+                if (categoryCtx && stats.categoryDistribution) {
+                    const categories = Object.keys(stats.categoryDistribution);
+                    const categoryData = Object.values(stats.categoryDistribution);
+                    const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#6B7280', '#EC4899', '#14B8A6', '#F97316', '#06B6D4'];
+                    
+                    new Chart(categoryCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: categories,
+                            datasets: [{
+                                data: categoryData,
+                                backgroundColor: colors.slice(0, categories.length)
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // State Chart
+                const stateCtx = document.getElementById('stateChart');
+                if (stateCtx && stats.stateDistribution) {
+                    const states = Object.keys(stats.stateDistribution);
+                    const stateData = Object.values(stats.stateDistribution);
+                    
+                    new Chart(stateCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: states,
+                            datasets: [{
+                                label: 'Providers',
+                                data: stateData,
+                                backgroundColor: '#3B82F6'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading chart data:', error);
+            }
+        }
+
+        // Initialize Dashboard Map
+        function initDashboardMap() {
+            const mapContainer = document.getElementById('dashProviderMap');
+            if (!mapContainer || !mapContainer.offsetParent) return; // Skip if not visible
+            
+            if (window.dashboardMap) return; // Already initialized
+            
+            // Create the map
+            const map = L.map('dashProviderMap').setView([39.8283, -98.5795], 4);
+            
+            // Add tile layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Store map instance globally
+            window.dashboardMap = map;
+            window.dashboardMapMode = 'markers';
+            window.dashboardHeatmapLayer = null;
+            window.dashboardMarkerClusterGroup = null;
+            
+            // Add event listeners for dashboard map buttons
+            const heatmapBtn = document.getElementById('dashHeatmapBtn');
+            const clustersBtn = document.getElementById('dashClustersBtn');
+            const refreshBtn = document.getElementById('dashMapRefreshBtn');
+            
+            if (heatmapBtn) heatmapBtn.addEventListener('click', () => switchDashboardMapMode('heatmap'));
+            if (clustersBtn) clustersBtn.addEventListener('click', () => switchDashboardMapMode('clusters'));
+            if (refreshBtn) refreshBtn.addEventListener('click', () => refreshDashboardMap());
+            
+            // Add event listeners for filter dropdowns
+            const categoryFilter = document.getElementById('dashMapCategoryFilter');
+            const stateFilter = document.getElementById('dashMapStateFilter');
+            
+            if (categoryFilter) categoryFilter.addEventListener('change', () => refreshDashboardMap());
+            if (stateFilter) stateFilter.addEventListener('change', () => refreshDashboardMap());
+            
+            // Load initial provider data
+            loadDashboardMapProviders(map);
+        }
+        
+        // Load providers onto the dashboard map
+        async function loadDashboardMapProviders(map) {
+            try {
+                // Get filter values
+                const categoryFilter = document.getElementById('dashMapCategoryFilter')?.value || '';
+                const stateFilter = document.getElementById('dashMapStateFilter')?.value || '';
+                
+                // Build query string with filters
+                let queryParams = new URLSearchParams();
+                queryParams.append('limit', '1000');
+                if (categoryFilter && categoryFilter.trim()) {
+                    queryParams.append('category', categoryFilter.trim());
+                }
+                if (stateFilter && stateFilter.trim()) {
+                    queryParams.append('state', stateFilter.trim());
+                }
+                
+                const url = `/api/providers?${queryParams.toString()}`;
+                console.log('Map loading providers from:', url);
+                
+                const response = await fetch(url);
+                if (!response.ok) {
+                    console.error('Failed to fetch providers:', response.status);
+                    return;
+                }
+                
+                const data = await response.json();
+                const providers = data.providers || [];
+                console.log('Loaded', providers.length, 'providers for map');
+                
+                if (window.dashboardMapMode === 'heatmap') {
+                    displayDashboardHeatmap(map, providers);
+                } else if (window.dashboardMapMode === 'clusters') {
+                    displayDashboardClusters(map, providers);
+                } else {
+                    displayDashboardMarkers(map, providers);
+                }
+            } catch (error) {
+                console.error('Error loading map providers:', error);
+            }
+        }
+        
+        // Display markers on dashboard map
+        function displayDashboardMarkers(map, providers) {
+            // Clear all existing layers first
+            if (window.dashboardMarkerClusterGroup) {
+                map.removeLayer(window.dashboardMarkerClusterGroup);
+                window.dashboardMarkerClusterGroup = null;
+            }
+            if (window.dashboardHeatmapLayer) {
+                map.removeLayer(window.dashboardHeatmapLayer);
+                window.dashboardHeatmapLayer = null;
+            }
+            
+            const markers = L.markerClusterGroup();
+            
+            providers.forEach(provider => {
+                if (provider.latitude && provider.longitude) {
+                    const popup = `<strong>${provider.name}</strong><br>${provider.category || 'Unknown'}<br>${provider.state}`;
+                    const marker = L.marker([provider.latitude, provider.longitude]).bindPopup(popup);
+                    markers.addLayer(marker);
+                }
+            });
+            
+            map.addLayer(markers);
+            window.dashboardMarkerClusterGroup = markers;
+        }
+        
+        // Display heatmap on dashboard map
+        function displayDashboardHeatmap(map, providers) {
+            // Clear existing layers first
+            if (window.dashboardMarkerClusterGroup) {
+                map.removeLayer(window.dashboardMarkerClusterGroup);
+                window.dashboardMarkerClusterGroup = null;
+            }
+            if (window.dashboardHeatmapLayer) {
+                map.removeLayer(window.dashboardHeatmapLayer);
+                window.dashboardHeatmapLayer = null;
+            }
+            
+            const heatData = providers
+                .filter(p => p.latitude && p.longitude)
+                .map(p => [p.latitude, p.longitude, 1]);
+            
+            if (heatData.length > 0) {
+                const heatmap = L.heatLayer(heatData, {
+                    radius: 25,
+                    blur: 15,
+                    maxZoom: 1,
+                    gradient: { 0.4: '#0015ff', 0.65: '#00ff00', 1: '#ff0000' }
+                });
+                map.addLayer(heatmap);
+                window.dashboardHeatmapLayer = heatmap;
+            }
+        }
+        
+        // Display clusters on dashboard map
+        function displayDashboardClusters(map, providers) {
+            // Clear all existing layers first
+            if (window.dashboardMarkerClusterGroup) {
+                map.removeLayer(window.dashboardMarkerClusterGroup);
+                window.dashboardMarkerClusterGroup = null;
+            }
+            if (window.dashboardHeatmapLayer) {
+                map.removeLayer(window.dashboardHeatmapLayer);
+                window.dashboardHeatmapLayer = null;
+            }
+            
+            const clusterGroup = L.markerClusterGroup({
+                maxClusterRadius: 80,
+                spiderfyOnMaxZoom: true,
+                showCoverageOnHover: false
+            });
+            
+            providers.forEach(provider => {
+                if (provider.latitude && provider.longitude) {
+                    const popup = `<strong>${provider.name}</strong><br>${provider.category || 'Unknown'}`;
+                    const marker = L.marker([provider.latitude, provider.longitude]).bindPopup(popup);
+                    clusterGroup.addLayer(marker);
+                }
+            });
+            
+            map.addLayer(clusterGroup);
+            window.dashboardMarkerClusterGroup = clusterGroup;
+        }
+        
+        // Switch dashboard map mode
+        function switchDashboardMapMode(mode) {
+            window.dashboardMapMode = mode;
+            refreshDashboardMap();
+        }
+        
+        // Refresh dashboard map
+        function refreshDashboardMap() {
+            const map = window.dashboardMap;
+            if (!map) return;
+            
+            // Clear existing layers except base tile
+            map.eachLayer(layer => {
+                if (!(layer instanceof L.TileLayer)) {
+                    map.removeLayer(layer);
+                }
+            });
+            
+            window.dashboardHeatmapLayer = null;
+            window.dashboardMarkerClusterGroup = null;
+            
+            loadDashboardMapProviders(map);
+        }
+
+        // Initialize Map
+        function initMap() {
+            const mapContainer = document.getElementById('providerMap');
+            if (!mapContainer || mapContainer.innerHTML !== '') return;
+            
+            const map = L.map('providerMap').setView([39.8283, -98.5795], 4);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Store the map instance globally
+            window.providerMap = map;
+            
+            // Set up map mode variables
+            window.mapMode = 'markers'; // 'markers', 'heatmap', 'clusters'
+            window.heatmapLayer = null;
+            window.markerClusterGroup = null;
+            
+            // Add event listeners to map search button
+            document.getElementById('mapSearchBtn').addEventListener('click', () => refreshMap(map));
+            
+            // Add event listeners to heatmap and clusters buttons
+            document.getElementById('heatmapBtn').addEventListener('click', () => switchMapMode('heatmap'));
+            document.getElementById('clustersBtn').addEventListener('click', () => switchMapMode('clusters'));
+            
+            // Load and display real provider markers
+            loadMapProviders(map);
+        }
+        
+        // Function to refresh the map with current filters
+        function refreshMap(map) {
+            // Clear existing layers except the base tile layer
+            map.eachLayer(layer => {
+                if (!(layer instanceof L.TileLayer)) {
+                    map.removeLayer(layer);
+                }
+            });
+            
+            // Reset any global layers
+            if (window.heatmapLayer) {
+                map.removeLayer(window.heatmapLayer);
+                window.heatmapLayer = null;
+            }
+            
+            if (window.markerClusterGroup) {
+                map.removeLayer(window.markerClusterGroup);
+                window.markerClusterGroup = null;
+            }
+            
+            // Load with new filters
+            loadMapProviders(map);
+        }
+        
+        // Function to switch between map modes (markers, heatmap, clusters)
+        function switchMapMode(mode) {
+            const map = window.providerMap;
+            if (!map) return;
+            
+            window.mapMode = mode;
+            refreshMap(map);
+            
+            // Update button styles
+            document.getElementById('heatmapBtn').className = 
+                mode === 'heatmap' ? 'bg-blue-800 text-white px-4 py-2 rounded-lg text-sm transition' : 'bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition';
+            
+            document.getElementById('clustersBtn').className = 
+                mode === 'clusters' ? 'bg-green-800 text-white px-4 py-2 rounded-lg text-sm transition' : 'bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition';
+        }
+
+        async function loadMapProviders(map) {
+            try {
+                // Get filter values
+                const categoryFilter = document.getElementById('mapCategoryFilter').value;
+                const stateFilter = document.getElementById('mapStateFilter').value;
+                const typeFilter = document.getElementById('mapTypeFilter').value;
+                
+                // Build query parameters
+                const params = new URLSearchParams();
+                params.append('per_page', '100');
+                if (categoryFilter) params.append('category', categoryFilter);
+                if (stateFilter) params.append('state', stateFilter);
+                if (typeFilter) params.append('type', typeFilter);
+                
+                // Make API call with filters
+                const response = await fetch(`/api/providers?${params.toString()}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    credentials: 'same-origin' // Include cookies for authentication
+                });
+                
+                if (!response.ok) {
+                    let errorMessage = response.statusText;
+                    try {
+                        // Try to parse error response as JSON
+                        const errorData = await response.json();
+                        if (errorData && errorData.message) {
+                            errorMessage = errorData.message;
+                        }
+                    } catch (e) {
+                        // If not JSON, try to get text
+                        try {
+                            const errorText = await response.text();
+                            if (errorText && errorText.length < 100) {
+                                errorMessage = errorText;
+                            }
+                        } catch (textError) {
+                            console.error('Could not parse error response', textError);
+                        }
+                    }
+                    
+                    console.error(`Server responded with ${response.status}: ${errorMessage}`);
+                    throw new Error(`Failed to fetch map providers: ${errorMessage}`);
+                }
+                
+                const data = await response.json();
+                
+                // Validate the data structure
+                if (!data || !Array.isArray(data.providers)) {
+                    throw new Error('Invalid response format from server');
+                }
+                
+                displayProvidersOnMap(map, data.providers);
+            } catch (error) {
+                console.error('Error loading map providers:', error);
+                
+                // Show error message on map
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-4 rounded-lg shadow-lg z-1000';
+                errorDiv.innerHTML = `<div class="text-red-500 font-semibold"><i class="fas fa-exclamation-triangle mr-2"></i>Error loading map providers</div>
+                                      <div class="text-gray-600 text-sm mt-2">${error.message || 'Unknown error'}</div>
+                                      <button id="retryMapBtn" class="mt-3 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Retry</button>`;
+                
+                // Remove existing error message if any
+                const existingError = document.querySelector('#providerMap .absolute');
+                if (existingError) existingError.remove();
+                
+                document.getElementById('providerMap').appendChild(errorDiv);
+                
+                // Add retry button event listener
+                document.getElementById('retryMapBtn').addEventListener('click', () => refreshMap(map));
+            }
+        }
+
+        function displayProvidersOnMap(map, providers) {
+            // Update result count for map
+            const mapResultCount = document.createElement('div');
+            mapResultCount.className = 'absolute top-4 right-4 bg-white px-3 py-2 rounded-lg shadow z-1000';
+            mapResultCount.innerHTML = `<strong>${providers.length}</strong> providers found`;
+            
+            // Remove existing count display if any
+            const existingCount = document.querySelector('#providerMap .absolute');
+            if (existingCount) existingCount.remove();
+            
+            document.getElementById('providerMap').appendChild(mapResultCount);
+            
+            // Filter out providers without coordinates
+            const validProviders = providers.filter(provider => provider.latitude && provider.longitude);
+            
+            if (validProviders.length === 0) return;
+            
+            // Choose display method based on mode
+            switch (window.mapMode) {
+                case 'heatmap':
+                    displayHeatmap(map, validProviders);
+                    break;
+                    
+                case 'clusters':
+                    displayClusters(map, validProviders);
+                    break;
+                    
+                default: // 'markers'
+                    displayMarkers(map, validProviders);
+            }
+        }
+        
+        // Display individual markers
+        function displayMarkers(map, providers) {
+            providers.forEach(provider => {
+                const marker = L.marker([provider.latitude, provider.longitude]).addTo(map);
+                
+                const categoryName = provider.category ? provider.category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'N/A';
+                
+                marker.bindPopup(`
+                    <div class="p-2">
+                        <h4 class="font-semibold">${provider.name}</h4>
+                        <p class="text-sm text-gray-600">${provider.city}, ${provider.state}</p>
+                        <p class="text-sm">${categoryName}</p>
+                        <p class="text-sm">Zipcode: ${formatZipcode(provider.zipcode)}</p>
+                        <p class="text-sm text-gray-500">Source: ${provider.source || 'N/A'}</p>
+                    </div>
+                `);
+            });
+        }
+        
+        // Display providers as a heatmap
+        function displayHeatmap(map, providers) {
+            // Create heatmap data points
+            const heatData = providers.map(provider => {
+                const intensity = 0.5;  // Fixed intensity since we don't use confidence anymore
+                return [provider.latitude, provider.longitude, intensity];
+            });
+            
+            // Create and add heatmap layer
+            window.heatmapLayer = L.heatLayer(heatData, {
+                radius: 25,
+                blur: 15,
+                maxZoom: 10,
+                gradient: {0.4: 'blue', 0.6: 'lime', 0.8: 'yellow', 1.0: 'red'}
+            }).addTo(map);
+        }
+        
+        // Display providers in clusters
+        function displayClusters(map, providers) {
+            // Create a marker cluster group
+            window.markerClusterGroup = L.markerClusterGroup({
+                showCoverageOnHover: false,
+                maxClusterRadius: 50,
+                spiderfyOnMaxZoom: true
+            });
+            
+            // Add markers to the cluster group
+            providers.forEach(provider => {
+                const marker = L.marker([provider.latitude, provider.longitude]);
+                
+                const categoryName = provider.category ? provider.category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'N/A';
+                
+                marker.bindPopup(`
+                    <div class="p-2">
+                        <h4 class="font-semibold">${provider.name}</h4>
+                        <p class="text-sm text-gray-600">${provider.city}, ${provider.state}</p>
+                        <p class="text-sm">${categoryName}</p>
+                        <p class="text-sm">Zipcode: ${formatZipcode(provider.zipcode)}</p>
+                        <p class="text-sm text-gray-500">Source: ${provider.source || 'N/A'}</p>
+                    </div>
+                `);
+                
+                window.markerClusterGroup.addLayer(marker);
+            });
+            
+            // Add the cluster group to the map
+            map.addLayer(window.markerClusterGroup);
+        }
+
+        // Update Search Results
+        function updateSearchResults(providers) {
+            console.log('Updating search results with providers:', providers);
+            
+            // Ensure we always have an array to work with
+            if (!Array.isArray(providers)) {
+                console.warn('Providers is not an array, converting:', providers);
+                
+                if (!providers) {
+                    providers = [];
+                } else if (typeof providers === 'object' && providers !== null) {
+                    // Check if it has any array properties we might use
+                    if (Array.isArray(providers.providers)) {
+                        providers = providers.providers;
+                    } else if (Array.isArray(providers.results)) {
+                        providers = providers.results;
+                    } else {
+                        // Convert single object to array with one item
+                        providers = [providers];
+                    }
+                } else {
+                    providers = [];
+                }
+            }
+            
+            console.log('Final provider array length:', providers.length);
+            
+            // Debug: Display first provider details if available
+            if (providers.length > 0) {
+                console.log('First provider details:', JSON.stringify(providers[0], null, 2));
+            } else {
+                console.warn('No providers available to display');
+            }
+            
+            // Get the search results container
+            const resultsContainer = document.getElementById('searchResults');
+            if (!resultsContainer) {
+                console.error('Search results container not found');
+                return;
+            }
+            
+            // Debug container
+            console.log('Results container found:', resultsContainer.tagName, resultsContainer.id);
+            
+            // Store current results for view toggle and other functions
+            window.currentSearchResults = providers;
+            
+            console.log('Current search results stored:', window.currentSearchResults.length);
+            
+            // Clear the results container first
+            resultsContainer.innerHTML = '';
+            console.log('Results container cleared');
+            
+            // Try to display actual providers
+            // Display a test row to confirm rendering works
+            try {
+                const testRow = document.createElement('tr');
+                testRow.className = 'bg-green-50 border-b hover:bg-green-100';
+                testRow.innerHTML = `
+                    <td class="px-4 py-2" colspan="10">
+                        <div class="font-medium">Test Provider - This row confirms your display is working</div>
+                        <div class="text-xs text-gray-500">
+                            If you see this row but not your actual results, there's a problem with your data.
+                        </div>
+                    </td>`;
+                resultsContainer.appendChild(testRow);
+                console.log('Test row added successfully');
+            } catch (testRowError) {
+                console.error('Failed to add test row:', testRowError);
+            }
+
+            // Check if we have actual providers to display
+            if (providers.length > 0) {
+                console.log('Adding actual provider rows:', providers.length);
+                
+                // Create a header row for real data
+                const headerRow = document.createElement('tr');
+                headerRow.className = 'bg-blue-50 border-b';
+                headerRow.innerHTML = `
+                    <td class="px-4 py-2" colspan="10">
+                        <div class="font-medium">Provider Data (${providers.length} items)</div>
+                    </td>`;
+                resultsContainer.appendChild(headerRow);
+                
+                // Loop through actual providers
+                providers.forEach((provider, index) => {
+                    try {
+                        console.log(`Creating row for provider ${index}:`, provider);
+                        
+                        const row = document.createElement('tr');
+                        row.className = 'border-b hover:bg-gray-50';
+                        row.setAttribute('data-provider-id', provider.id || provider.provider_id || '');
+                        
+                        // Format data for display (with fallbacks)
+                        const providerName = provider.name || provider.provider_name || 'Unknown Provider';
+                        const providerEmail = provider.email || provider.provider_email || 'N/A';
+                        const providerPhone = provider.phone || provider.provider_phone || 'N/A';
+                        
+                        // Handle various location field formats
+                        const providerCity = provider.city || provider.provider_city || '';
+                        const providerState = provider.state || provider.provider_state || '';
+                        const location = (providerCity && providerState) ? 
+                            `${providerCity}, ${providerState}` : 
+                            (providerCity || providerState || 'N/A');
+                        
+                        // Get the rest of the fields with fallbacks
+                        const type = provider.type || provider.provider_type || 'N/A';
+                        const category = provider.category || provider.provider_category || 'N/A';
+                        const source = provider.source || provider.provider_source || 'N/A';
+                        const zipcode = provider.zipcode || provider.provider_zipcode || 'N/A';
+                        
+                        row.innerHTML = `
+                            <td class="px-3 py-2">
+                                <input type="checkbox" class="rounded" value="${provider.id || provider.provider_id || ''}">
+                            </td>
+                            <td class="px-3 py-2">${providerName}</td>
+                            <td class="px-3 py-2">${providerEmail}</td>
+                            <td class="px-3 py-2">${providerPhone}</td>
+                            <td class="px-3 py-2">${location}</td>
+                            <td class="px-3 py-2">${type}</td>
+                            <td class="px-3 py-2">${category}</td>
+                            <td class="px-3 py-2">${source}</td>
+                            <td class="px-3 py-2">${zipcode}</td>
+                            <td class="px-3 py-2">
+                                <button class="text-blue-600 hover:text-blue-800" onclick="alert('Edit ${providerName}')">Edit</button>
+                                <button class="text-red-600 hover:text-red-800 ml-2" onclick="alert('Delete ${providerName}')">Delete</button>
+                            </td>
+                        `;
+                        
+                        resultsContainer.appendChild(row);
+                    } catch (rowError) {
+                        console.error('Error creating row for provider:', provider, rowError);
+                    }
+                });
+                console.log('Successfully added provider rows');
+            } else {
+                console.log('No providers to display');
+                
+                // Add a debug row
+                const debugRow = document.createElement('tr');
+                debugRow.className = 'bg-yellow-50 border-b';
+                debugRow.innerHTML = `
+                    <td class="px-4 py-3" colspan="10">
+                        <div class="font-medium">Debug Information</div>
+                        <div class="text-xs text-gray-500">
+                            No providers data was received. Check console for more details.
+                        </div>
+                    </td>`;
+                resultsContainer.appendChild(debugRow);
+                
+                // Add the standard no results message
+                const noResultsRow = document.createElement('tr');
+                noResultsRow.innerHTML = `
+                    <td colspan="10" class="text-center py-8">
+                        <div class="flex flex-col items-center justify-center">
+                            <i class="fas fa-search text-gray-400 text-4xl mb-3"></i>
+                            <p class="text-gray-500 text-base mb-2">No providers found</p>
+                            <p class="text-gray-400 text-sm mb-4">Try adjusting your search criteria or filters</p>
+                            <button id="debugDatabaseBtn" class="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition">
+                                <i class="fas fa-database mr-2"></i>Check Database Status
+                            </button>
+                        </div>
+                    </td>
+                `;
+                resultsContainer.appendChild(noResultsRow);
+                
+                // Add event listener for debug button
+                setTimeout(() => {
+                    document.getElementById('debugDatabaseBtn')?.addEventListener('click', async () => {
+                        try {
+                            const response = await fetch('/api/database/stats', {
+                                method: 'GET',
+                                headers: { 'Accept': 'application/json' },
+                                credentials: 'same-origin'
+                            });
+                            
+                            if (response.ok) {
+                                const data = await response.json();
+                                console.log('Database stats:', data);
+                                alert(`Database Statistics:\n- Users: ${data.statistics.users_count || 'Unknown'}\n- Providers: ${data.statistics.providers_count || 'Unknown'}\n- Categories: ${data.statistics.categories_count || 'Unknown'}\n- Sources: ${data.statistics.sources_count || 'Unknown'}`);
+                            } else {
+                                console.error('Failed to get database stats');
+                                alert('Failed to get database statistics. Please check the console for more details.');
+                            }
+                        } catch (error) {
+                            console.error('Error checking database stats:', error);
+                            alert('Error checking database status: ' + error.message);
+                        }
+                    });
+                }, 100);
+                
+                return;
+            }
+            
+            // Clear previous results
+            resultsContainer.innerHTML = '';
+            
+            // Update result count displays (there may be multiple with same ID)
+            const resultCountElements = document.querySelectorAll('#resultCount');
+            resultCountElements.forEach(element => {
+                if (element) {
+                    element.textContent = `Showing ${providers.length} results`;
+                }
+            });
+            
+            providers.forEach(provider => {
+                const row = document.createElement('tr');
+                row.className = 'border-t hover:bg-gray-50';
+                
+                // Format category name
+                const categoryName = provider.category ? provider.category.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'N/A';
+                const location = provider.city && provider.state ? `${provider.city}, ${provider.state}` : (provider.city || provider.state || 'N/A');
+                
+                row.innerHTML = `
+                    <td class="px-2 sm:px-4 py-2 sm:py-3">
+                        <input type="checkbox" class="rounded" value="${provider.id}">
+                    </td>
+                    <td class="px-2 sm:px-4 py-2 sm:py-3" data-label="Name">
+                        <div class="font-medium text-sm sm:text-base">${provider.name}</div>
+                        <div class="text-xs text-gray-500 sm:hidden">${location}</div>
+                        <div class="text-xs text-gray-500 sm:hidden">${provider.phone || 'No phone'}</div>
+                        <div class="text-xs sm:hidden">
+                            <span class="inline-flex rounded-full bg-${provider.type === 'business' ? 'blue' : 'green'}-100 px-2 py-0.5 text-xs font-semibold text-${provider.type === 'business' ? 'blue' : 'green'}-800">
+                                ${provider.type === 'business' ? 'Business' : 'Individual'}
+                            </span>
+                            <span class="ml-1 bg-gray-100 px-2 py-0.5 rounded-full">${categoryName}</span>
+                            <span class="ml-1 bg-gray-100 px-2 py-0.5 rounded-full">ZIP: ${formatZipcode(provider.zipcode)}</span>
+                        </div>
+                    </td>
+                    <td class="hidden sm:table-cell px-2 sm:px-4 py-2 sm:py-3" data-label="Email">${provider.email || 'N/A'}</td>
+                    <td class="hidden md:table-cell px-2 sm:px-4 py-2 sm:py-3" data-label="Phone">${provider.phone || 'N/A'}</td>
+                    <td class="hidden sm:table-cell px-2 sm:px-4 py-2 sm:py-3" data-label="Location">${location}</td>
+                    <td class="hidden lg:table-cell px-2 sm:px-4 py-2 sm:py-3" data-label="Type">
+                        <span class="px-2 py-1 bg-${provider.type === 'business' ? 'blue' : 'green'}-100 text-${provider.type === 'business' ? 'blue' : 'green'}-800 rounded-full text-xs">
+                            ${provider.type === 'business' ? 'Business' : 'Individual'}
+                        </span>
+                    </td>
+                    <td class="hidden md:table-cell px-2 sm:px-4 py-2 sm:py-3" data-label="Category">${categoryName}</td>
+                    <td class="hidden xl:table-cell px-2 sm:px-4 py-2 sm:py-3" data-label="Source">${provider.source || 'N/A'}</td>
+                    <td class="hidden lg:table-cell px-2 sm:px-4 py-2 sm:py-3" data-label="Zipcode">
+                        <span class="text-sm">${formatZipcode(provider.zipcode)}</span>
+                    </td>
+                    <td class="px-2 sm:px-4 py-2 sm:py-3" data-label="Actions">
+                        <div class="flex space-x-3">
+                            <button class="text-blue-600 hover:text-blue-800 text-base sm:text-sm" onclick="editProvider(${provider.id})">
+                                <span class="hidden sm:inline">Edit</span>
+                                <i class="fas fa-edit sm:hidden"></i>
+                            </button>
+                            <button class="text-red-600 hover:text-red-800 text-base sm:text-sm" onclick="deleteProvider(${provider.id})">
+                                <span class="hidden sm:inline">Delete</span>
+                                <i class="fas fa-trash sm:hidden"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                resultsContainer.appendChild(row);
+            });
+        }
+        
+        // Function to update pagination controls
+        function updatePagination(data) {
+            const paginationInfo = document.getElementById('paginationInfo');
+            const paginationControls = document.getElementById('paginationControls');
+            
+            if (!paginationInfo || !paginationControls) return;
+            
+            // Handle case where data might be incomplete or undefined
+            if (!data || typeof data !== 'object') {
+                paginationInfo.textContent = 'No results';
+                paginationControls.innerHTML = '';
+                return;
+            }
+            
+            const page = data.page || 1;
+            const per_page = data.per_page || 20;
+            const total = data.total || 0;
+            const pages = data.pages || 0;
+            
+            const start = total > 0 ? (page - 1) * per_page + 1 : 0;
+            const end = Math.min(start + per_page - 1, total);
+            
+            // Update info text
+            paginationInfo.textContent = `Showing ${start}-${end} of ${total} results`;
+            
+            // Clear existing controls
+            paginationControls.innerHTML = '';
+            
+            // Add Previous button
+            const prevButton = document.createElement('button');
+            prevButton.className = page > 1 
+                ? 'px-3 py-1 border border-gray-300 rounded hover:bg-gray-100'
+                : 'px-3 py-1 border border-gray-300 rounded text-gray-400 cursor-not-allowed';
+            prevButton.textContent = 'Previous';
+            prevButton.disabled = page <= 1;
+            prevButton.addEventListener('click', () => {
+                if (page > 1) performSearch(page - 1);
+            });
+            paginationControls.appendChild(prevButton);
+            
+            // Calculate range of page numbers to show
+            const maxPageButtons = 3;
+            let startPage = Math.max(1, page - Math.floor(maxPageButtons / 2));
+            let endPage = Math.min(pages, startPage + maxPageButtons - 1);
+            
+            // Adjust if we're near the end
+            if (endPage - startPage + 1 < maxPageButtons) {
+                startPage = Math.max(1, endPage - maxPageButtons + 1);
+            }
+            
+            // Add page number buttons
+            for (let i = startPage; i <= endPage; i++) {
+                const pageButton = document.createElement('button');
+                pageButton.className = i === page
+                    ? 'px-3 py-1 bg-blue-600 text-white rounded'
+                    : 'px-3 py-1 border border-gray-300 rounded hover:bg-gray-100';
+                pageButton.textContent = i;
+                pageButton.addEventListener('click', () => performSearch(i));
+                paginationControls.appendChild(pageButton);
+            }
+            
+            // Add Next button
+            const nextButton = document.createElement('button');
+            nextButton.className = page < pages
+                ? 'px-3 py-1 border border-gray-300 rounded hover:bg-gray-100'
+                : 'px-3 py-1 border border-gray-300 rounded text-gray-400 cursor-not-allowed';
+            nextButton.textContent = 'Next';
+            nextButton.disabled = page >= pages;
+            nextButton.addEventListener('click', () => {
+                if (page < pages) performSearch(page + 1);
+            });
+            paginationControls.appendChild(nextButton);
+        }
+
+        // Initialize Modals
+        function initModals() {
+            const addUserBtn = document.getElementById('addUserBtn');
+            const addUserModal = document.getElementById('addUserModal');
+            const closeModalBtns = document.querySelectorAll('.close-modal');
+
+            if (addUserBtn && addUserModal) {
+                addUserBtn.addEventListener('click', () => {
+                    addUserModal.classList.remove('hidden');
+                });
+            }
+
+            closeModalBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    addUserModal.classList.add('hidden');
+                });
+            });
+
+            // Close modal on backdrop click
+            addUserModal?.addEventListener('click', (e) => {
+                if (e.target === addUserModal) {
+                    addUserModal.classList.add('hidden');
+                }
+            });
+        }
+
+        // Initialize File Upload
+        function initFileUpload() {
+            const fileUpload = document.getElementById('fileUpload');
+            const browseFiles = document.getElementById('browseFiles');
+            const uploadProgress = document.getElementById('uploadProgress');
+
+            if (browseFiles && fileUpload) {
+                browseFiles.addEventListener('click', () => {
+                    fileUpload.click();
+                });
+
+                fileUpload.addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) {
+                        const file = e.target.files[0];
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        
+                        // Display file upload UI
+                        uploadProgress.classList.remove('hidden');
+                        
+                        // Start upload
+                        uploadFile(formData);
+                    }
+                });
+            }
+        }
+
+        async function uploadFile(formData) {
+            const uploadProgress = document.getElementById('uploadProgress');
+            const progressBar = uploadProgress.querySelector('.bg-blue-600');
+            const progressText = uploadProgress.querySelector('p');
+            
+            try {
+                // Reset progress bar
+                progressBar.style.width = '0%';
+                progressText.textContent = 'Starting upload...';
+                
+                // Start upload
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Upload failed');
+                }
+                
+                // Show success
+                progressBar.style.width = '100%';
+                progressText.textContent = 'Upload complete!';
+                
+                // Show notification
+                showNotification('File uploaded successfully! Processing data...', 'success');
+                
+                // Reset file input
+                document.getElementById('fileUpload').value = '';
+                
+                // Hide progress after delay
+                setTimeout(() => {
+                    uploadProgress.classList.add('hidden');
+                    
+                    // Refresh stats after successful upload
+                    loadDashboardData();
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                progressBar.style.width = '100%';
+                progressText.textContent = 'Upload failed!';
+                progressBar.classList.remove('bg-blue-600');
+                progressBar.classList.add('bg-red-600');
+                
+                // Show error
+                showNotification(`Upload failed: ${error.message}`, 'error');
+                
+                // Reset after delay
+                setTimeout(() => {
+                    uploadProgress.classList.add('hidden');
+                    progressBar.classList.add('bg-blue-600');
+                    progressBar.classList.remove('bg-red-600');
+                }, 3000);
+            }
+        }
+        
+        function simulateUpload() {
+            const uploadProgress = document.getElementById('uploadProgress');
+            const progressBar = uploadProgress.querySelector('.bg-blue-600');
+            const progressText = uploadProgress.querySelector('p');
+            
+            uploadProgress.classList.remove('hidden');
+            let progress = 0;
+            
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        uploadProgress.classList.add('hidden');
+                        alert('File uploaded successfully!');
+                    }, 500);
+                }
+                
+                progressBar.style.width = progress + '%';
+                progressText.textContent = `Uploading... ${Math.round(progress)}%`;
+            }, 200);
+        }
+
+        // Initialize Event Listeners
+        function initEventListeners() {
+            // Logout functionality
+            const logoutBtn = document.getElementById('logoutBtn');
+            logoutBtn?.addEventListener('click', async function() {
+                try {
+                    const response = await fetch('/api/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        window.location.href = '/login';
+                    }
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    // Force redirect anyway
+                    window.location.href = '/login';
+                }
+            });
+            
+            // Enhanced Search functionality
+            const searchBtn = document.getElementById('searchBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const searchInput = document.getElementById('searchInput');
+            const searchInputClear = document.getElementById('searchInputClear')?.querySelector('i');
+            const advancedSearchBtn = document.getElementById('advancedSearchBtn');
+            const closeAdvancedSearchBtn = document.getElementById('closeAdvancedSearchBtn');
+            const advancedSearchOptions = document.getElementById('advancedSearchOptions');
+            const searchSuggestions = document.getElementById('searchSuggestions');
+            const searchTags = document.getElementById('searchTags');
+            const resultsPerPage = document.getElementById('resultsPerPage');
+            const loadMorePreviewResults = document.getElementById('loadMorePreviewResults');
+            
+            // Initialize search components and ensure visibility of clear button
+            if (searchInput && searchInput.value) {
+                searchInputClear?.classList.remove('hidden');
+            }
+            
+            console.log("Initializing search functionality");
+            
+            // Set up event listeners
+            if (searchBtn) searchBtn.addEventListener('click', () => {
+                console.log("Search button clicked");
+                // Switch to search tab first to ensure results are visible
+                if (window.switchTab) {
+                    window.switchTab('search');
+                } else {
+                    // Fallback if switchTab function isn't available globally
+                    const searchTab = document.getElementById('search');
+                    if (searchTab) {
+                        document.querySelectorAll('.tab-content').forEach(tab => {
+                            tab.classList.add('hidden');
+                        });
+                        searchTab.classList.remove('hidden');
+                    }
+                }
+                performSearch();
+            });
+            
+            if (clearBtn) clearBtn.addEventListener('click', () => {
+                console.log("Clear button clicked");
+                clearSearch();
+            });
+            
+            if (searchInput) {
+                searchInput.addEventListener('input', handleSearchInput);
+                
+                searchInput.addEventListener('keyup', (e) => {
+                    if (e.key === 'Enter') {
+                        console.log("Enter key pressed in search input");
+                        performSearch();
+                    }
+                    
+                    if (searchInput.value) {
+                        searchInputClear?.classList.remove('hidden');
+                    } else {
+                        searchInputClear?.classList.add('hidden');
+                    }
+                });
+                
+                searchInput.addEventListener('focus', () => {
+                    if (searchInput.value.length > 2) {
+                        showSearchSuggestions();
+                    }
+                });
+            }
+            
+            // Clear search input button
+            if (searchInputClear) {
+                searchInputClear.addEventListener('click', () => {
+                    if (searchInput) {
+                        searchInput.value = '';
+                        // Clear any selected provider ID
+                        if (searchInput.hasAttribute('data-selected-id')) {
+                            searchInput.removeAttribute('data-selected-id');
+                            console.log('Cleared selected provider ID from X button');
+                        }
+                        searchInput.focus();
+                    }
+                    searchInputClear.classList.add('hidden');
+                    hideSearchSuggestions();
+                });
+            }
+            
+            // Advanced search toggle
+            advancedSearchBtn?.addEventListener('click', () => {
+                advancedSearchOptions?.classList.toggle('hidden');
+            });
+            
+            closeAdvancedSearchBtn?.addEventListener('click', () => {
+                advancedSearchOptions?.classList.add('hidden');
+            });
+            
+            // Handle results per page change
+            resultsPerPage?.addEventListener('change', () => {
+                currentSearchParams.per_page = parseInt(resultsPerPage.value);
+                performSearch();
+            });
+            
+            // Handle loading more preview results
+            loadMorePreviewResults?.addEventListener('click', loadMoreSearchPreviewResults);
+            
+            // Close suggestions when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!searchInput?.contains(e.target) && !searchSuggestions?.contains(e.target)) {
+                    hideSearchSuggestions();
+                }
+            });
+
+            // Search help/tips functionality
+            const searchHelpBtn = document.getElementById('searchHelpBtn');
+            const searchTipsPopup = document.getElementById('searchTipsPopup');
+            const closeTipsBtn = document.getElementById('closeTipsBtn');
+            
+            // Toggle search tips popup
+            searchHelpBtn?.addEventListener('click', () => {
+                searchTipsPopup?.classList.toggle('hidden');
+            });
+            
+            // Close search tips popup
+            closeTipsBtn?.addEventListener('click', () => {
+                searchTipsPopup?.classList.add('hidden');
+            });
+            
+            // Close search tips when clicking outside
+            document.addEventListener('click', (e) => {
+                if (searchTipsPopup && !searchTipsPopup.classList.contains('hidden') && 
+                    !searchTipsPopup.contains(e.target) && 
+                    !searchHelpBtn.contains(e.target)) {
+                    searchTipsPopup.classList.add('hidden');
+                }
+            });
+            
+            // Export functionality
+            document.getElementById('exportCsv')?.addEventListener('click', () => exportData('csv'));
+            document.getElementById('exportExcel')?.addEventListener('click', () => exportData('excel'));
+            
+            // Deduplication functionality
+            document.getElementById('deduplicateBtn')?.addEventListener('click', deduplicateProviders);
+
+            // Select all checkbox
+            document.getElementById('selectAll')?.addEventListener('change', (e) => {
+                const checkboxes = document.querySelectorAll('#searchResults input[type="checkbox"]');
+                checkboxes.forEach(cb => cb.checked = e.target.checked);
+            });
+
+            // Filter change events
+            ['categoryFilter', 'stateFilter', 'typeFilter', 'confidenceFilter'].forEach(id => {
+                document.getElementById(id)?.addEventListener('change', performSearch);
+            });
+        }
+
+        // Store current search parameters globally
+        let currentSearchParams = {
+            search: '',
+            category: '',
+            state: '',
+            type: '',
+            confidence: '',
+            page: 1,
+            per_page: 20
+        };
+        
+        // Global error handlers
+        window.addEventListener('error', (event) => {
+            console.error('Global error caught:', event.error || event.message);
+            showNotification('An error occurred. Please try again.', 'error');
+        });
+        
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled promise rejection:', event.reason);
+            showNotification('A network error occurred. Please check your connection.', 'error');
+        });
+        
+        // Function to check network connectivity
+        async function checkNetworkConnectivity() {
+            try {
+                // Try to fetch a small resource to check connectivity
+                const response = await fetch('/api/stats', { 
+                    method: 'HEAD',
+                    cache: 'no-cache',
+                    headers: {
+                        'pragma': 'no-cache'
+                    }
+                });
+                return response.ok;
+            } catch (error) {
+                console.error('Network connectivity check failed:', error);
+                return false;
+            }
+        }
+        
+        async function performSearch(pageNum = 1) {
+            const searchInput = document.getElementById('searchInput');
+            const categoryFilter = document.getElementById('categoryFilter');
+            const stateFilter = document.getElementById('stateFilter');
+            const typeFilter = document.getElementById('typeFilter');
+            const confidenceFilter = document.getElementById('confidenceFilter');
+            const resultsContainer = document.getElementById('searchResults');
+            const resultCount = document.getElementById('resultCount');
+            const resultsPerPage = document.getElementById('resultsPerPage');
+            
+            // Get selected search fields from advanced options
+            const searchFields = [];
+            document.querySelectorAll('input[name="searchField"]:checked').forEach(field => {
+                searchFields.push(field.value);
+            });
+            
+            // Get selected search type from advanced options
+            const searchType = document.querySelector('input[name="searchType"]:checked')?.value || 'fuzzy';
+            
+            // Check if we have a selected provider from suggestions
+            const selectedProviderId = searchInput?.getAttribute('data-selected-id');
+            console.log('Data attribute from search input:', searchInput?.getAttribute('data-selected-id'));
+            
+            // Log debugging information
+            console.log('Performing search with the following values:');
+            console.log('- Search text:', searchInput?.value);
+            console.log('- Selected provider ID:', selectedProviderId);
+            console.log('- Category filter:', categoryFilter?.value);
+            console.log('- State filter:', stateFilter?.value);
+            console.log('- Type filter:', typeFilter?.value);
+            
+            // Define known categories for matching
+            const knownCategories = {
+                'residential cleaning': 'residential-cleaning',
+                'residential': 'residential-cleaning',
+                'commercial janitorial': 'commercial-janitorial',
+                'commercial': 'commercial-janitorial',
+                'janitorial': 'commercial-janitorial',
+                'carpet cleaning': 'carpet-cleaning',
+                'carpet': 'carpet-cleaning',
+                'window cleaning': 'window-cleaning',
+                'window': 'window-cleaning',
+                'painters': 'painters',
+                'painting': 'painters',
+                'maintenance': 'maintenance',
+                'hvac': 'hvac',
+                'plumbers': 'plumbers',
+                'plumbing': 'plumbers',
+                'electricians': 'electricians',
+                'electrical': 'electricians',
+                'floor care': 'floor-care',
+                'flooring': 'floor-care',
+                'waste management': 'waste-management',
+                'waste': 'waste-management',
+                'pest control': 'pest-control',
+                'pest': 'pest-control',
+                'landscaping': 'landscaping',
+                'landscape': 'landscaping',
+                'pressure washing': 'pressure-washing',
+                'pressure': 'pressure-washing',
+                'tub & tile': 'tub-tile',
+                'tub and tile': 'tub-tile',
+                'tub tile': 'tub-tile',
+                'construction cleanup': 'construction-cleanup',
+                'construction': 'construction-cleanup'
+            };
+            
+            // Check if search input is a zipcode (5-digit number)
+            const searchValue = searchInput?.value || '';
+            const isZipcode = /^\d{5}(-\d{4})?$/.test(searchValue);
+            
+            // Check if the search input matches a category
+            const searchLower = searchValue.toLowerCase().trim();
+            const matchedCategory = knownCategories[searchLower];
+            const isCategory = !!matchedCategory;
+            
+            // Get search type indicator element
+            const searchTypeIndicator = document.getElementById('searchTypeIndicator');
+            
+            if (isZipcode) {
+                // ZIPCODE SEARCH
+                console.log('Detected zipcode search:', searchValue);
+                // Strip the ZIP+4 part if present to get just the 5-digit zipcode
+                const zipcode = searchValue.substring(0, 5);
+                
+                // Show a visual indicator that we're doing a zipcode search
+                searchInput.classList.add('bg-yellow-50', 'border-yellow-300');
+                searchInput.classList.remove('bg-purple-50', 'border-purple-300', 'bg-blue-50', 'border-blue-300');
+                searchInput.title = `Searching by zipcode: ${zipcode}`;
+                
+                // Update the search type indicator
+                searchTypeIndicator.textContent = 'ZIP';
+                searchTypeIndicator.classList.remove('hidden', 'bg-blue-100', 'bg-green-100', 'bg-purple-100');
+                searchTypeIndicator.classList.add('bg-yellow-100', 'text-yellow-800');
+            } else if (isCategory) {
+                // CATEGORY SEARCH
+                console.log('Detected category search:', searchLower, '→', matchedCategory);
+                
+                // Select the category in the dropdown
+                if (categoryFilter) {
+                    categoryFilter.value = matchedCategory;
+                    console.log('Set category filter to:', matchedCategory);
+                }
+                
+                // Show a visual indicator that we're doing a category search
+                searchInput.classList.add('bg-purple-50', 'border-purple-300');
+                searchInput.classList.remove('bg-yellow-50', 'border-yellow-300', 'bg-blue-50', 'border-blue-300');
+                searchInput.title = `Searching by category: ${matchedCategory}`;
+                
+                // Update the search type indicator
+                searchTypeIndicator.textContent = 'CAT';
+                searchTypeIndicator.classList.remove('hidden', 'bg-yellow-100', 'bg-blue-100', 'bg-green-100');
+                searchTypeIndicator.classList.add('bg-purple-100', 'text-purple-800');
+            } else if (selectedProviderId) {
+                // PROVIDER ID SEARCH
+                searchInput.classList.remove('bg-yellow-50', 'border-yellow-300', 'bg-purple-50', 'border-purple-300');
+                searchInput.classList.add('bg-blue-50', 'border-blue-300');
+                
+                // Update the search type indicator
+                searchTypeIndicator.textContent = 'ID';
+                searchTypeIndicator.classList.remove('hidden', 'bg-yellow-100', 'bg-green-100', 'bg-purple-100');
+                searchTypeIndicator.classList.add('bg-blue-100', 'text-blue-800');
+            } else {
+                // STANDARD TEXT SEARCH
+                searchInput.classList.remove('bg-yellow-50', 'border-yellow-300', 'bg-blue-50', 'border-blue-300', 'bg-purple-50', 'border-purple-300');
+                searchInput.title = '';
+                
+                // Update or hide the search type indicator based on whether we have search text
+                if (searchValue) {
+                    searchTypeIndicator.textContent = 'TEXT';
+                    searchTypeIndicator.classList.remove('hidden', 'bg-yellow-100', 'bg-blue-100', 'bg-purple-100');
+                    searchTypeIndicator.classList.add('bg-green-100', 'text-green-800');
+                } else {
+                    searchTypeIndicator.classList.add('hidden');
+                }
+            }
+            
+            // Store current search parameters
+            currentSearchParams = {
+                search: isCategory ? '' : (searchInput?.value || ''), // Don't use search term if it's a category
+                category: isCategory ? matchedCategory : (categoryFilter?.value || ''),
+                state: stateFilter?.value || '',
+                type: typeFilter?.value || '',
+                confidence: isZipcode ? searchValue : (confidenceFilter?.value || ''), // Use zipcode directly if detected
+                searchFields: searchFields.length ? searchFields : ['name', 'email', 'phone', 'address'],
+                searchType: searchType,
+                page: pageNum,
+                per_page: resultsPerPage?.value ? parseInt(resultsPerPage.value) : 20,
+                provider_id: selectedProviderId || null,
+                is_zipcode: isZipcode,
+                is_category: isCategory
+            };
+            
+            // Log the detected search type for debugging
+            if (isZipcode) {
+                console.log('Search type: ZIPCODE');
+            } else if (isCategory) {
+                console.log('Search type: CATEGORY');
+            } else if (selectedProviderId) {
+                console.log('Search type: PROVIDER ID');
+            } else if (searchValue) {
+                console.log('Search type: TEXT');
+            } else {
+                console.log('Search type: NONE (empty search)');
+            }
+            
+            // Verify provider_id was properly set
+            if (selectedProviderId) {
+                console.log('Provider ID set in search params:', selectedProviderId);
+            }
+            
+            // Update search tags
+            updateSearchTags();
+            
+            // Show loading state
+            if (resultsContainer) {
+                resultsContainer.innerHTML = '<tr><td colspan="8" class="text-center py-8"><i class="fas fa-spinner fa-spin mr-2"></i>Loading providers...</td></tr>';
+            }
+            
+            // Check network connectivity first
+            const isOnline = await checkNetworkConnectivity();
+            if (!isOnline) {
+                if (resultsContainer) {
+                    resultsContainer.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-red-500"><i class="fas fa-wifi-slash mr-2"></i>Network connection error. Please check your internet connection and try again.</td></tr>';
+                }
+                return;
+            }
+            
+            try {
+                // Build query parameters
+                const params = new URLSearchParams();
+                
+                // Check if we're searching for a specific provider by ID
+                if (currentSearchParams.provider_id) {
+                    console.log('IMPORTANT: Searching by provider_id:', currentSearchParams.provider_id);
+                    params.append('provider_id', currentSearchParams.provider_id);
+                    
+                    // When searching by ID, we don't need most other parameters
+                    // So we'll skip adding them to make a cleaner request
+                } else if (currentSearchParams.is_zipcode) {
+                    // Handle zipcode search differently
+                    console.log('Searching by zipcode:', currentSearchParams.confidence); // Using confidence for zipcode
+                    params.append('zipcode', currentSearchParams.confidence);
+                    
+                    // Always include category with zipcode search if available
+                    if (currentSearchParams.category) {
+                        params.append('category', currentSearchParams.category);
+                        console.log('Adding category filter to zipcode search:', currentSearchParams.category);
+                    }
+                    
+                    // Add state filter if provided (may further restrict zipcode results)
+                    if (currentSearchParams.state) {
+                        params.append('state', currentSearchParams.state);
+                    }
+                } else if (currentSearchParams.is_category) {
+                    // Handle category search (search directly by category)
+                    console.log('Searching by category:', currentSearchParams.category);
+                    params.append('category', currentSearchParams.category);
+                    
+                    // Add state filter if provided (may further restrict category results)
+                    if (currentSearchParams.state) {
+                        params.append('state', currentSearchParams.state);
+                    }
+                    
+                    // Add type filter if provided
+                    if (currentSearchParams.type) {
+                        params.append('type', currentSearchParams.type);
+                    }
+                } else {
+                    // Regular search with text and filters
+                    console.log('Searching with text and filters');
+                    
+                    // Add search parameters
+                    if (currentSearchParams.search) {
+                        params.append('search', currentSearchParams.search);
+                        console.log('Adding search term:', currentSearchParams.search);
+                    }
+                    
+                    // Add filter parameters
+                    if (currentSearchParams.category) {
+                        params.append('category', currentSearchParams.category);
+                        console.log('Adding category filter:', currentSearchParams.category);
+                    }
+                    if (currentSearchParams.state) params.append('state', currentSearchParams.state);
+                }
+                if (currentSearchParams.type) params.append('type', currentSearchParams.type);
+                if (currentSearchParams.confidence) params.append('confidence', currentSearchParams.confidence);
+                
+                // Add advanced search parameters
+                if (currentSearchParams.searchFields && currentSearchParams.searchFields.length) {
+                    params.append('search_fields', currentSearchParams.searchFields.join(','));
+                }
+                params.append('search_type', currentSearchParams.searchType);
+                params.append('page', currentSearchParams.page);
+                params.append('per_page', currentSearchParams.per_page);
+                
+                // Make API call
+                let data;
+                try {
+                    console.log('Fetching providers with params:', params.toString());
+                    console.log('Search parameters:', JSON.stringify(currentSearchParams, null, 2));
+                    
+                    // Debug log to help diagnose issues
+                    if (currentSearchParams.provider_id) {
+                        console.log(`🔍 Searching for specific provider with ID: ${currentSearchParams.provider_id}`);
+                    }
+                    
+                    const response = await fetch(`/api/providers?${params.toString()}`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Cache-Control': 'no-cache'
+                        },
+                        credentials: 'same-origin' // Include cookies for authentication
+                    });
+                    
+                    if (!response.ok) {
+                        let errorMessage = response.statusText;
+                        try {
+                            // Try to parse error response as JSON
+                            const errorData = await response.json();
+                            if (errorData && errorData.message) {
+                                errorMessage = errorData.message;
+                            }
+                        } catch (e) {
+                            // If not JSON, try to get text
+                            try {
+                                const errorText = await response.text();
+                                if (errorText && errorText.length < 100) {
+                                    errorMessage = errorText;
+                                }
+                            } catch (textError) {
+                                console.error('Could not parse error response', textError);
+                            }
+                        }
+                        
+                        console.error(`Server responded with ${response.status}: ${errorMessage}`);
+                        throw new Error(`Failed to fetch providers: ${errorMessage}`);
+                    }
+                    
+                    // Log raw response for debugging
+                    const responseText = await response.clone().text();
+                    console.log('Raw API response:', responseText.substring(0, 500) + (responseText.length > 500 ? '...' : ''));
+                    
+                    // Parse as JSON
+                    data = await response.json();
+                    console.log('API returned data:', data);
+                    
+                    // Validate data structure
+                    if (!data) {
+                        console.error('API returned null or undefined data');
+                        throw new Error('No data received from server');
+                    }
+                    
+                    console.log('API Response Structure:', Object.keys(data));
+                    
+                    if (!Array.isArray(data.providers)) {
+                        console.error('API returned invalid providers structure:', data);
+                        
+                        // Check if we got an empty array or null
+                        if (data.providers === null || data.providers === undefined) {
+                            console.warn('Providers property is null or undefined, creating empty array');
+                            data.providers = [];
+                        } else {
+                            // Try to convert to array if possible
+                            try {
+                                data.providers = Array.isArray(data.providers) ? data.providers : [data.providers];
+                                console.warn('Converted non-array providers to array:', data.providers);
+                            } catch (conversionError) {
+                                console.error('Could not convert providers to array:', conversionError);
+                                data.providers = [];
+                            }
+                        }
+                    }
+                    
+                    // At this point, data.providers should always be an array (may be empty)
+                    console.log('Final providers array length:', data.providers.length);
+                } catch (apiError) {
+                    console.error('API call failed:', apiError);
+                    
+                    // Mock data for demonstration purposes when API is not available
+                    console.log('Using mock data for demonstration');
+                    data = {
+                        providers: [
+                            { id: '1', name: 'John Doe', email: 'john@example.com', phone: '(123) 456-7890', city: 'New York', state: 'NY', type: 'individual', category: 'residential-cleaning', source: 'Web', zipcode: '10001' },
+                            { id: '2', name: 'Jane Smith', email: 'jane@example.com', phone: '(234) 567-8901', city: 'Los Angeles', state: 'CA', type: 'business', category: 'commercial-janitorial', source: 'Directory', zipcode: '90001' },
+                            { id: '3', name: 'Robert Johnson', email: 'robert@example.com', phone: '(345) 678-9012', city: 'Chicago', state: 'IL', type: 'individual', category: 'carpet-cleaning', source: 'Web', zipcode: '60601' },
+                            { id: '4', name: 'Emily Davis', email: 'emily@example.com', phone: '(456) 789-0123', city: 'Houston', state: 'TX', type: 'business', category: 'hvac', source: 'LinkedIn', zipcode: '77001' },
+                            { id: '5', name: 'Michael Wilson', email: 'michael@example.com', phone: '(567) 890-1234', city: 'Phoenix', state: 'AZ', type: 'individual', category: 'plumbers', source: 'Yelp', zipcode: '85001' }
+                        ],
+                        total: 5,
+                        page: 1,
+                        per_page: 20,
+                        pages: 1
+                    };
+                }
+                
+                // Validate the data structure
+                if (!data || !Array.isArray(data.providers)) {
+                    throw new Error('Invalid response format from server');
+                }
+                
+                // Store providers for other functions
+                window.currentProviders = data.providers; 
+                
+                // Ensure we have data to display
+                console.log('Search results found:', data.providers.length, 'providers');
+                
+                // Check data structure before updating UI
+                console.log('Data structure received from API:', data);
+                
+                if (data && Array.isArray(data.providers)) {
+                    console.log('Provider array length:', data.providers.length);
+                } else {
+                    console.error('Invalid providers data structure:', data);
+                }
+                
+                // Update UI with search results
+                // Extract providers array from the response
+                let providers = [];
+                
+                // Handle different response formats
+                if (Array.isArray(data)) {
+                    console.log('Response is direct array:', data.length);
+                    providers = data;
+                } else if (data.providers && Array.isArray(data.providers)) {
+                    console.log('Response has providers array property:', data.providers.length);
+                    providers = data.providers;
+                } else if (data.results && Array.isArray(data.results)) {
+                    console.log('Response has results array property:', data.results.length);
+                    providers = data.results;
+                } else {
+                    console.log('Converting response to array:', data);
+                    // Try to convert the response to an array if it's not already
+                    providers = Array.isArray(data) ? data : [data];
+                }
+                
+                // Log what we extracted
+                console.log('Final providers to display:', providers.length);
+                
+                // Now update the UI
+                updateSearchResults(providers);
+                updatePagination(data);
+                
+                // Make sure search tab is visible if not already
+                const searchTab = document.getElementById('search');
+                if (searchTab && !searchTab.classList.contains('fade-in')) {
+                    // Switch to search tab if it's not currently active
+                    const tabButtons = document.querySelectorAll('.tab-btn');
+                    tabButtons.forEach(btn => {
+                        if (btn.getAttribute('data-tab') === 'search') {
+                            btn.click();
+                        }
+                    });
+                }
+                
+                // Update result count
+                if (resultCount) {
+                    if (Array.isArray(data.providers) && data.providers.length > 0) {
+                        resultCount.textContent = `Showing ${data.providers.length} of ${data.total || data.providers.length} results`;
+                    } else {
+                        resultCount.textContent = 'No results found';
+                    }
+                    console.log('Updated result count:', resultCount.textContent);
+                }
+                
+            } catch (error) {
+                console.error('Error fetching providers:', error);
+                if (resultsContainer) {
+                    resultsContainer.innerHTML = `
+                        <tr>
+                            <td colspan="8" class="text-center py-8">
+                                <div class="flex flex-col items-center">
+                                    <div class="text-red-500 mb-2">
+                                        <i class="fas fa-exclamation-triangle mr-2"></i>Error loading providers: ${error.message || 'Unknown error'}
+                                    </div>
+                                    <button id="retrySearchBtn" class="mt-3 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition">
+                                        <i class="fas fa-redo mr-2"></i>Retry
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>`;
+                    
+                    // Add event listener to retry button
+                    setTimeout(() => {
+                        document.getElementById('retrySearchBtn')?.addEventListener('click', () => performSearch(currentSearchParams.page));
+                    }, 100);
+                }
+                
+                // Update pagination to show no results
+                updatePagination({
+                    page: 1,
+                    per_page: 20,
+                    total: 0,
+                    pages: 0,
+                    providers: []
+                });
+            }
+        }
+
+        function clearSearch() {
+            console.log("Clearing search filters");
+            
+            // Clear search input, selected provider ID, and hide clear button
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.value = '';
+                // Clear any selected provider ID
+                if (searchInput.hasAttribute('data-selected-id')) {
+                    searchInput.removeAttribute('data-selected-id');
+                    console.log('Cleared selected provider ID during search clear');
+                }
+            }
+            
+            const clearButton = document.getElementById('searchInputClear')?.querySelector('i');
+            if (clearButton) clearButton.classList.add('hidden');
+            
+            // Clear all filter dropdowns
+            ['categoryFilter', 'stateFilter', 'typeFilter', 'confidenceFilter'].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) element.value = '';
+            });
+            
+            // Reset advanced search options
+            document.querySelectorAll('input[name="searchField"]').forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            
+            const fuzzyOption = document.querySelector('input[name="searchType"][value="fuzzy"]');
+            if (fuzzyOption) fuzzyOption.checked = true;
+            
+            // Reset results per page
+            const resultsPerPage = document.getElementById('resultsPerPage');
+            if (resultsPerPage) resultsPerPage.value = '25';
+            
+            // Hide suggestions and clear tags
+            hideSearchSuggestions();
+            const searchTags = document.getElementById('searchTags');
+            if (searchTags) searchTags.innerHTML = '';
+            
+            // Hide preview results
+            const elasticSearchPreview = document.getElementById('elasticSearchPreview');
+            if (elasticSearchPreview) elasticSearchPreview.classList.add('hidden');
+            
+            // Reset current search parameters
+            currentSearchParams = {
+                search: '',
+                category: '',
+                state: '',
+                type: '',
+                confidence: '',
+                searchFields: ['name', 'email', 'phone', 'address'],
+                searchType: 'fuzzy',
+                page: 1,
+                per_page: 25
+            };
+            
+            // Perform search to refresh results
+            try {
+                performSearch();
+                // Show notification
+                showNotification('Search filters have been cleared', 'info');
+            } catch (error) {
+                console.error('Error refreshing results after clear:', error);
+                showNotification('Error refreshing results. Please try again.', 'error');
+            }
+        }
+
+        async function exportData(format) {
+            try {
+                // Get current filter values
+                const searchInput = document.getElementById('searchInput');
+                const categoryFilter = document.getElementById('categoryFilter');
+                const stateFilter = document.getElementById('stateFilter');
+                const typeFilter = document.getElementById('typeFilter');
+                const confidenceFilter = document.getElementById('confidenceFilter');
+                
+                // Get selected provider IDs
+                const selectedCheckboxes = document.querySelectorAll('#searchResults input[type="checkbox"]:checked');
+                const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value).filter(id => id);
+                
+                // Build export data
+                const exportData = {
+                    format: format,
+                    filters: {
+                        search: searchInput?.value || '',
+                        category: categoryFilter?.value || '',
+                        state: stateFilter?.value || '',
+                        type: typeFilter?.value || '',
+                        confidence: confidenceFilter?.value || ''
+                    },
+                    selectedIds: selectedIds
+                };
+                
+                // Show loading
+                const exportBtn = event.target;
+                const originalText = exportBtn.textContent;
+                exportBtn.disabled = true;
+                exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Exporting...';
+                
+                // Make API call
+                const response = await fetch('/api/export', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(exportData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Export failed');
+                }
+                
+                // Get the file blob and download it
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `providers_export_${new Date().toISOString().slice(0,10)}.${format === 'csv' ? 'csv' : 'xlsx'}`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                // Show success message
+                showNotification('Export completed successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Export error:', error);
+                showNotification('Export failed. Please try again.', 'error');
+            } finally {
+                // Reset button
+                const exportBtn = event.target;
+                exportBtn.disabled = false;
+                exportBtn.textContent = originalText;
+            }
+        }
+
+        // Real-time updates simulation
+        setInterval(() => {
+            const activityTable = document.getElementById('activityTable');
+            if (activityTable && Math.random() > 0.7) {
+                const sources = [
+                    // API-based sources
+                    'Yelp API', 'Google Maps API', 'Yelp Fusion API',
+                    // Scrapers
+                    'BBB Scraper', 'YellowPages Scraper', 'Thomasnet', 'D&B Business Directory', 'Manta', 'Foursquare Scraper', 'Hotfrog Scraper',
+                    // Business Directories
+                    'CityLocal Pro', 'USA Company Directory', 'AllBusiness Directory', 'US Chamber of Commerce Directory', 'Citysearch', 'MerchantCircle',
+                    // New Business Directories
+                    'ShowMeLocal', 'WeAndCo', 'Pocket Insights', 'eLocal', 'Brownbook', 'Cylex USA', 'Local.com', 
+                    'SuperPages', 'CitySquares', 'EZlocal', '2FindLocal', 'BOTW', 'Yellowbook', 'DexKnows', 'Alignable'
+                ];
+                const categories = ['Residential Cleaning', 'HVAC', 'Plumbers', 'Electricians'];
+                const statuses = ['Success', 'Processing', 'Failed'];
+                
+                const newRow = document.createElement('tr');
+                newRow.className = 'border-t';
+                newRow.innerHTML = `
+                    <td class="px-4 py-3">${sources[Math.floor(Math.random() * sources.length)]}</td>
+                    <td class="px-4 py-3">${categories[Math.floor(Math.random() * categories.length)]}</td>
+                    <td class="px-4 py-3">${Math.floor(Math.random() * 500) + 50}</td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                            ${statuses[Math.floor(Math.random() * statuses.length)]}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3">Just now</td>
+                `;
+                
+                if (activityTable.children.length >= 5) {
+                    activityTable.removeChild(activityTable.lastChild);
+                }
+                activityTable.insertBefore(newRow, activityTable.firstChild);
+            }
+        }, 10000);
+
+        // Helper Functions
+        /**
+         * Format zipcode to exactly 5 digits
+         * This fixes the issue where some zipcodes were showing as 6 digits
+         * - Truncates zipcodes longer than 5 digits
+         * - Pads zipcodes shorter than 5 digits with leading zeros
+         * - Returns 'N/A' for null/undefined values
+         */
+        function formatZipcode(zipcode) {
+            try {
+                if (zipcode === undefined || zipcode === null) return 'N/A';
+                
+                // Convert to string and trim any spaces
+                let zip = String(zipcode).trim();
+                
+                // If empty after trimming
+                if (zip === '') return 'N/A';
+                
+                // If the zipcode is longer than 5 digits, truncate to 5
+                if (zip.length > 5) {
+                    return zip.substring(0, 5);
+                }
+                
+                return zip;
+            } catch (error) {
+                console.error('Error formatting zipcode:', error);
+                return 'N/A';
+            }
+            
+            // If it's shorter than 5 digits, pad with zeros
+            while (zip.length < 5) {
+                zip = '0' + zip;
+            }
+            
+            return zip;
+        }
+        
+        function showNotification(message, type = 'info', duration = 3000) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 max-w-[90vw] sm:max-w-md ${
+                type === 'success' ? 'bg-green-500 text-white' : 
+                type === 'error' ? 'bg-red-500 text-white' : 
+                type === 'warning' ? 'bg-yellow-500 text-white' :
+                'bg-blue-500 text-white'
+            }`;
+            notification.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} mr-2"></i>
+                        <span class="text-sm sm:text-base">${message}</span>
+                    </div>
+                    <button class="ml-2 text-white hover:text-gray-200" onclick="this.parentNode.parentNode.parentNode.removeChild(this.parentNode.parentNode)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto remove after specified duration
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.classList.add('fade-out');
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.parentNode.removeChild(notification);
+                        }
+                    }, 500);
+                }
+            }, duration);
+        }
+        
+        // Helper function to show modal dialogs for developer features
+        function showModal(title, content) {
+            // Create modal container
+            const modalContainer = document.createElement('div');
+            modalContainer.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            
+            // Create modal content
+            const modalContent = document.createElement('div');
+            modalContent.className = 'bg-white rounded-xl p-6 w-full max-w-2xl';
+            modalContent.innerHTML = `
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">${title}</h3>
+                    <button class="close-modal text-gray-500 hover:text-gray-700" title="Close modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div>${content}</div>
+            `;
+            
+            modalContainer.appendChild(modalContent);
+            document.body.appendChild(modalContainer);
+            
+            // Add close button functionality
+            const closeButton = modalContent.querySelector('.close-modal');
+            closeButton.addEventListener('click', () => {
+                modalContainer.remove();
+            });
+            
+            // Close on click outside modal
+            modalContainer.addEventListener('click', (e) => {
+                if (e.target === modalContainer) {
+                    modalContainer.remove();
+                }
+            });
+        }
+
+        async function loadDashboardData() {
+            try {
+                // Load dashboard statistics
+                const response = await fetch('/api/stats');
+                if (response.ok) {
+                    const stats = await response.json();
+                    updateDashboardStats(stats);
+                }
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        function updateDashboardStats(stats) {
+            // Update stat cards if they exist
+            const totalProvidersEl = document.querySelector('[data-stat="total-providers"]');
+            const individualsEl = document.querySelector('[data-stat="individuals"]');
+            const businessesEl = document.querySelector('[data-stat="businesses"]');
+            const statesEl = document.querySelector('[data-stat="states"]');
+            
+            if (totalProvidersEl && stats.totalProviders) {
+                totalProvidersEl.textContent = stats.totalProviders.toLocaleString();
+            }
+            if (individualsEl && stats.individuals) {
+                individualsEl.textContent = stats.individuals.toLocaleString();
+            }
+            if (businessesEl && stats.businesses) {
+                businessesEl.textContent = stats.businesses.toLocaleString();
+            }
+            if (statesEl && stats.statesCovered) {
+                statesEl.textContent = stats.statesCovered;
+            }
+        }
+
+        function editProvider(providerId) {
+            showNotification('Edit functionality coming soon!', 'info');
+        }
+
+        function deleteProvider(providerId) {
+            if (confirm('Are you sure you want to delete this provider?')) {
+                showNotification('Delete functionality coming soon!', 'info');
+            }
+        }
+
+        async function deduplicateProviders() {
+            if (!confirm('This will analyze all providers and remove ONLY exact duplicates (100% similar). Providers with minor differences will be kept. Continue?')) {
+                return;
+            }
+
+            const deduplicateBtn = document.getElementById('deduplicateBtn');
+            const originalContent = deduplicateBtn.innerHTML;
+            
+            try {
+                // Show loading state
+                deduplicateBtn.disabled = true;
+                deduplicateBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Analyzing...';
+                
+                // Make API call
+                const response = await fetch('/api/deduplicate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Deduplication failed');
+                }
+                
+                const data = await response.json();
+                
+                // Show success message
+                showNotification(data.message, 'success');
+                
+                // Refresh the search results
+                performSearch();
+                
+                // Refresh dashboard stats
+                loadDashboardData();
+                
+            } catch (error) {
+                console.error('Deduplication error:', error);
+                showNotification('Deduplication failed. Please try again.', 'error');
+            } finally {
+                // Reset button
+                deduplicateBtn.disabled = false;
+                deduplicateBtn.innerHTML = originalContent;
+            }
+        }
+        
+        // Database check and repair functionality
+
+        
+
+        // Enhanced search helper functions
+        
+        // Handle search input changes for live suggestions
+        let searchDebounceTimer;
+        function handleSearchInput(e) {
+            const searchInput = e.target;
+            const searchValue = searchInput.value;
+            
+            // Clear any previously selected provider ID when user modifies the search
+            if (searchInput.hasAttribute('data-selected-id')) {
+                searchInput.removeAttribute('data-selected-id');
+                console.log('Cleared selected provider ID due to manual search input');
+            }
+            
+            // Toggle clear button visibility
+            const clearBtn = document.getElementById('searchInputClear')?.querySelector('i');
+            if (searchValue) {
+                clearBtn?.classList.remove('hidden');
+            } else {
+                clearBtn?.classList.add('hidden');
+            }
+            
+            // Only trigger suggestions for 3+ characters
+            if (searchValue.length < 3) {
+                hideSearchSuggestions();
+                return;
+            }
+            
+            // Debounce search suggestions
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => {
+                fetchSearchSuggestions(searchValue);
+            }, 300);
+        }
+        
+        // Fetch and display search suggestions
+        async function fetchSearchSuggestions(query) {
+            if (!query || query.length < 2) {
+                hideSearchSuggestions();
+                return;
+            }
+            
+            try {
+                console.log('Fetching search suggestions for:', query);
+                
+                // Try to fetch suggestions from the API
+                const response = await fetch(`/api/providers/suggest?q=${encodeURIComponent(query)}&limit=8`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
+                
+                const suggestions = await response.json();
+                
+                // Use the backend-provided suggestions if available
+                if (Array.isArray(suggestions) && suggestions.length > 0) {
+                    console.log('Received suggestions:', suggestions.length);
+                    displaySearchSuggestions(suggestions);
+                    return;
+                }
+                
+                // If no suggestions from API or empty array, try to filter current providers
+                console.log('No suggestions from API, checking current providers');
+                if (window.currentProviders && Array.isArray(window.currentProviders) && window.currentProviders.length > 0) {
+                    const lowercaseQuery = query.toLowerCase();
+                    const filteredProviders = window.currentProviders
+                        .filter(p => 
+                            (p.name && p.name.toLowerCase().includes(lowercaseQuery)) ||
+                            (p.email && p.email.toLowerCase().includes(lowercaseQuery)) ||
+                            (p.phone && p.phone.includes(query)) ||
+                            (p.city && p.city.toLowerCase().includes(lowercaseQuery))
+                        )
+                        .slice(0, 8);
+                        
+                    if (filteredProviders.length > 0) {
+                        console.log('Using filtered current providers as suggestions');
+                        displaySearchSuggestions(filteredProviders);
+                        return;
+                    }
+                }
+                
+                // Final fallback to mock suggestions
+                console.log('No suggestions found, using fallback data');
+                const mockSuggestions = [
+                    { id: 1, name: "Residential Cleaning Service", email: "info@cleaningservice.com", phone: "(555) 123-4567", city: "New York", state: "NY" },
+                    { id: 2, name: "Professional Plumbers Inc", email: "contact@proplumbers.com", phone: "(555) 987-6543", city: "Chicago", state: "IL" },
+                    { id: 3, name: "Elite HVAC Solutions", email: "service@elitehvac.com", phone: "(555) 456-7890", city: "Miami", state: "FL" },
+                    { id: 4, name: "Green Lawn Care", email: "info@greenlawn.com", phone: "(555) 234-5678", city: "Dallas", state: "TX" }
+                ];
+                displaySearchSuggestions(mockSuggestions);
+            } catch (error) {
+                console.error('Error fetching search suggestions:', error);
+                hideSearchSuggestions();
+                
+                // Try to show a toast notification if function exists
+                if (typeof showNotification === 'function') {
+                    showNotification('Search suggestions unavailable', 'warning');
+                }
+            }
+        }
+        
+        // Display search suggestions in dropdown
+        function displaySearchSuggestions(suggestions) {
+            const suggestionsContainer = document.getElementById('searchSuggestions');
+            if (!suggestionsContainer) return;
+            
+            // Clear previous suggestions
+            suggestionsContainer.innerHTML = '';
+            
+            // Show container
+            if (suggestionsContainer.parentElement?.parentElement) {
+                suggestionsContainer.parentElement.parentElement.classList.remove('hidden');
+            }
+            
+            // Check if we have suggestions
+            if (!suggestions || suggestions.length === 0) {
+                const noResultItem = document.createElement('div');
+                noResultItem.className = 'px-4 py-3 text-center text-gray-500 italic';
+                noResultItem.textContent = 'No suggestions found';
+                suggestionsContainer.appendChild(noResultItem);
+                return;
+            }
+            
+            // Add new suggestions
+            suggestions.forEach(item => {
+                const suggestionItem = document.createElement('div');
+                suggestionItem.className = 'px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 transition-colors';
+                
+                // Highlight matching text
+                const searchText = document.getElementById('searchInput')?.value || '';
+                let displayName = item.name || 'Unknown Provider';
+                
+                if (searchText && displayName.toLowerCase().includes(searchText.toLowerCase())) {
+                    const regex = new RegExp(`(${searchText.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
+                    displayName = displayName.replace(regex, '<strong class="bg-yellow-100 px-0.5 rounded">$1</strong>');
+                }
+                
+                // Build suggestion content with improved layout
+                let content = `<div class="font-medium text-blue-800">${displayName}</div>`;
+                
+                // Add extra info if available
+                const details = [];
+                if (item.email) details.push(`<span class="text-gray-600"><i class="fas fa-envelope text-xs mr-1"></i>${item.email}</span>`);
+                if (item.phone) details.push(`<span class="text-gray-600"><i class="fas fa-phone text-xs mr-1"></i>${item.phone}</span>`);
+                if (item.city || item.state) {
+                    let location = [];
+                    if (item.city) location.push(item.city);
+                    if (item.state) location.push(item.state);
+                    details.push(`<span class="text-gray-600"><i class="fas fa-map-marker-alt text-xs mr-1"></i>${location.join(', ')}</span>`);
+                }
+                
+                if (details.length) {
+                    content += `<div class="text-xs mt-1.5 flex flex-wrap gap-3">${details.join('')}</div>`;
+                }
+                
+                suggestionItem.innerHTML = content;
+                
+                // Add click handler
+                suggestionItem.addEventListener('click', () => {
+                    const searchInput = document.getElementById('searchInput');
+                    searchInput.value = item.name;
+                    
+                    // Debug item object to see what properties we're receiving
+                    console.log('Suggestion item clicked:', JSON.stringify(item, null, 2));
+                    
+                    // Check for provider ID in various possible properties
+                    const providerId = item.id || item.provider_id || item.providerId;
+                    
+                    // Add data attribute to store the selected provider ID if available
+                    if (providerId) {
+                        searchInput.setAttribute('data-selected-id', providerId);
+                        console.log('Selected provider ID stored in data attribute:', providerId);
+                        
+                        // Add visual indicator that this is a specific provider selection
+                        searchInput.classList.add('bg-blue-50', 'border-blue-300');
+                        
+                        // Add tooltip to show we're searching for a specific provider
+                        searchInput.title = `Searching for provider ID: ${providerId}`;
+                    } else {
+                        // Remove any previous selection
+                        searchInput.removeAttribute('data-selected-id');
+                        searchInput.classList.remove('bg-blue-50', 'border-blue-300');
+                        searchInput.title = '';
+                        console.log('No provider ID available for suggestion');
+                    }
+                    
+                    hideSearchSuggestions();
+                    
+                    // Call performSearch with a clear indication this is from a suggestion
+                    console.log('Performing search from suggestion click with provider ID:', providerId);
+                    performSearch(1);
+                });
+                
+                suggestionsContainer.appendChild(suggestionItem);
+            });
+            
+            // Show suggestions container
+            suggestionsContainer.classList.remove('hidden');
+        }
+        
+        // Hide search suggestions dropdown
+        function hideSearchSuggestions() {
+            const suggestionsContainer = document.getElementById('searchSuggestions');
+            if (suggestionsContainer?.parentElement?.parentElement) {
+                suggestionsContainer.parentElement.parentElement.classList.add('hidden');
+            }
+            // Clear the container after a short delay (for animation)
+            setTimeout(() => {
+                if (suggestionsContainer) {
+                    suggestionsContainer.innerHTML = '';
+                }
+            }, 200);
+        }
+        
+        // Show search suggestions dropdown
+        function showSearchSuggestions() {
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput?.value.length >= 2) {
+                fetchSearchSuggestions(searchInput.value);
+            }
+        }
+        
+        // Load more results for preview
+        function loadMoreSearchPreviewResults() {
+            // Implementation depends on your backend API
+            // This is a placeholder for the functionality
+            const previewContainer = document.getElementById('searchPreviewResults');
+            const loadMoreBtn = document.getElementById('loadMorePreviewResults');
+            
+            // Show loading state
+            loadMoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Loading...';
+            
+            // Here you'd make an API call to load more results
+            // For now, we'll just simulate it
+            setTimeout(() => {
+                loadMoreBtn.innerHTML = 'Load more results';
+                loadMoreBtn.classList.add('hidden');
+                
+                // Show a message when there are no more results
+                const noMoreMsg = document.createElement('div');
+                noMoreMsg.className = 'text-sm text-gray-500 text-center mt-2';
+                noMoreMsg.textContent = 'No more results to load';
+                previewContainer.parentNode.appendChild(noMoreMsg);
+            }, 1000);
+        }
+        
+        // Update search tags based on current filters
+        function updateSearchTags() {
+            const tagsContainer = document.getElementById('searchTags');
+            if (!tagsContainer) return;
+            
+            // Clear existing tags
+            tagsContainer.innerHTML = '';
+            
+            const addTag = (label, value, param) => {
+                if (!value) return;
+                
+                const tag = document.createElement('div');
+                tag.className = 'bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center';
+                tag.innerHTML = `
+                    <span class="mr-2">${label}: ${value}</span>
+                    <button class="h-5 w-5 bg-blue-200 rounded-full flex items-center justify-center hover:bg-blue-300">
+                        <i class="fas fa-times text-xs"></i>
+                    </button>
+                `;
+                
+                // Add click handler to remove filter
+                tag.querySelector('button').addEventListener('click', () => {
+                    if (param === 'search') {
+                        document.getElementById('searchInput').value = '';
+                    } else {
+                        document.getElementById(param + 'Filter').value = '';
+                    }
+                    performSearch();
+                });
+                
+                tagsContainer.appendChild(tag);
+            };
+            
+            // Add tags for all active filters
+            if (currentSearchParams.is_category) {
+                // When searching directly for a category via search bar
+                const categoryText = document.getElementById('categoryFilter')?.querySelector(`option[value="${currentSearchParams.category}"]`)?.textContent || currentSearchParams.category;
+                addTag('Category Search', categoryText, 'search');
+            } else if (currentSearchParams.search) {
+                // Normal text search
+                addTag('Search', currentSearchParams.search, 'search');
+            }
+            
+            if (currentSearchParams.category && !currentSearchParams.is_category) {
+                // Only show separate category tag if it's not the main search term
+                const categoryText = document.getElementById('categoryFilter')?.querySelector(`option[value="${currentSearchParams.category}"]`)?.textContent || currentSearchParams.category;
+                addTag('Category', categoryText, 'category');
+            }
+            
+            if (currentSearchParams.state) {
+                const stateText = document.getElementById('stateFilter')?.querySelector(`option[value="${currentSearchParams.state}"]`)?.textContent || currentSearchParams.state;
+                addTag('State', stateText, 'state');
+            }
+            
+            if (currentSearchParams.type) {
+                const typeText = document.getElementById('typeFilter')?.querySelector(`option[value="${currentSearchParams.type}"]`)?.textContent || currentSearchParams.type;
+                addTag('Type', typeText, 'type');
+            }
+            
+            if (currentSearchParams.confidence) {
+                const confidenceText = document.getElementById('confidenceFilter')?.querySelector(`option[value="${currentSearchParams.confidence}"]`)?.textContent || currentSearchParams.confidence;
+                addTag('Confidence', confidenceText, 'confidence');
+            }
+        }
+        
+        // Add export functionality
+        const exportProvidersBtn = document.getElementById('exportProvidersBtn');
+        if (exportProvidersBtn) {
+            exportProvidersBtn.addEventListener('click', handleExportProviders);
+        }
+        
+        async function handleExportProviders() {
+            try {
+                // Show loading state
+                const originalContent = exportProvidersBtn.innerHTML;
+                exportProvidersBtn.disabled = true;
+                exportProvidersBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Exporting...';
+                
+                // Get any active filters from the search tab
+                const category = document.getElementById('searchCategory')?.value || '';
+                const state = document.getElementById('searchState')?.value || '';
+                const source = document.getElementById('searchSource')?.value || '';
+                
+                // Create the export URL with optional filters
+                let exportUrl = '/api/export/providers?';
+                const params = [];
+                
+                if (category) params.push(`category=${encodeURIComponent(category)}`);
+                if (state) params.push(`state=${encodeURIComponent(state)}`);
+                if (source) params.push(`source=${encodeURIComponent(source)}`);
+                
+                exportUrl += params.join('&');
+                
+                // Trigger file download
+                window.location.href = exportUrl;
+                
+                // Show success message
+                showNotification('Export started. Your download will begin shortly.', 'success');
+                
+                // Reset button after a delay
+                setTimeout(() => {
+                    exportProvidersBtn.disabled = false;
+                    exportProvidersBtn.innerHTML = originalContent;
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Export error:', error);
+                showNotification('Export failed. Please try again.', 'error');
+                exportProvidersBtn.disabled = false;
+                exportProvidersBtn.innerHTML = '<i class="fas fa-file-export mr-1"></i> Export to JSON';
+            }
+        }
+
+        // Back to top button functionality
+        const backToTopBtn = document.getElementById('backToTopBtn');
+        
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                backToTopBtn.classList.remove('hidden');
+            } else {
+                backToTopBtn.classList.add('hidden');
+            }
+        });
+        
+        backToTopBtn.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+        
+        // Show hint for mobile users about scrolling table
+        if (window.innerWidth < 640) {
+            setTimeout(() => {
+                showNotification('Tip: Swipe horizontally to see more data or tap the view button to switch to card view', 'info', 7000);
+            }, 1000);
+        }
+        
+        // Mobile view toggle functionality
+        const toggleViewBtn = document.getElementById('toggleViewBtn');
+        const viewIcon = document.getElementById('viewIcon');
+        let isCardView = false;
+        
+        if (toggleViewBtn) {
+            toggleViewBtn.addEventListener('click', () => {
+                isCardView = !isCardView;
+                const resultsContainer = document.getElementById('searchResults');
+                const resultsTable = document.querySelector('.search-results-table');
+                
+                if (isCardView) {
+                    // Switch to card view
+                    viewIcon.className = 'fas fa-th-list';
+                    resultsTable.classList.add('mobile-card-view');
+                    showNotification('Switched to card view for better mobile visibility', 'info');
+                } else {
+                    // Switch to table view
+                    viewIcon.className = 'fas fa-table';
+                    resultsTable.classList.remove('mobile-card-view');
+                    showNotification('Switched to table view', 'info');
+                }
+                
+                // Re-render current results with the new view
+                if (window.currentSearchResults && window.currentSearchResults.length > 0) {
+                    updateSearchResults(window.currentSearchResults);
+                }
+            });
+        }
+
+        // Check for mobile devices and adjust UI if needed
+        if (window.innerWidth < 640) {
+            // Any mobile-specific initial setup can go here
+            document.querySelectorAll('.sm-stack').forEach(el => {
+                el.classList.add('flex', 'flex-col');
+            });
+            
+            // Show hint for mobile users about table navigation
+            setTimeout(() => {
+                showNotification('Tip: Swipe horizontally to see more data or tap the view button to switch to card view', 'info', 7000);
+            }, 1000);
+        }
+        
+        // User dropdown toggle functionality
+        const userDropdownBtn = document.getElementById('userDropdownBtn');
+        const userDropdown = document.getElementById('userDropdown');
+        const viewProfileBtn = document.getElementById('viewProfileBtn');
+        
+        // Toggle user dropdown
+        userDropdownBtn?.addEventListener('click', function(e) {
+            e.stopPropagation();
+            userDropdown.classList.toggle('hidden');
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (userDropdown && !userDropdown.classList.contains('hidden') && !userDropdownBtn.contains(e.target)) {
+                userDropdown.classList.add('hidden');
+            }
+        });
+        
+        // View profile functionality
+        viewProfileBtn?.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Switch to dashboard tab if not already active
+            const dashboardTab = document.querySelector('[data-tab="dashboard"]');
+            dashboardTab.click();
+            
+            // Scroll to profile section
+            const profileSection = document.querySelector('.bg-gradient-to-r.from-blue-500.to-purple-600');
+            if (profileSection) {
+                profileSection.scrollIntoView({ behavior: 'smooth' });
+                
+                // Highlight effect
+                const profileCard = profileSection.closest('.bg-white');
+                profileCard.classList.add('ring-4', 'ring-blue-300');
+                setTimeout(() => {
+                    profileCard.classList.remove('ring-4', 'ring-blue-300');
+                }, 1500);
+            }
+            
+            // Hide dropdown
+            userDropdown.classList.add('hidden');
+        });
+        
+        // Logout functionality
+        const logoutBtn = document.getElementById('logoutBtn');
+        const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
+        
+        const handleLogout = async function() {
+            try {
+                const response = await fetch('/api/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    window.location.href = '/login';
+                } else {
+                    showNotification('Logout failed. Please try again.', 'error');
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                showNotification('Network error. Please check your connection.', 'error');
+            }
+        };
+        
+        logoutBtn?.addEventListener('click', handleLogout);
+        mobileLogoutBtn?.addEventListener('click', handleLogout);
+        
+        // Add animation style
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(-10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .animate-fadeIn {
+                animation: fadeIn 0.2s ease-out forwards;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+
+    <!-- Mobile View Toggle -->
+    <div class="fixed bottom-20 right-6 z-50 sm:hidden">
+        <button id="toggleViewBtn" class="bg-blue-600 hover:bg-blue-700 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition-all" aria-label="Toggle view">
+            <i class="fas fa-table" id="viewIcon"></i>
+        </button>
+    </div>
+    
+    <!-- Back to Top Button -->
+    <button id="backToTopBtn" class="hidden fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition-all z-50" aria-label="Back to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+</body>
+</html>

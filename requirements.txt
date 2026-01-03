@@ -1,0 +1,35 @@
+# Flask and extensions
+Flask
+flask-socketio
+flask-cors
+Werkzeug
+
+# Data processing and analysis
+pandas
+numpy
+fuzzywuzzy
+python-Levenshtein  # For better performance with fuzzywuzzy
+spacy
+beautifulsoup4
+
+# For Excel file support
+openpyxl
+xlrd
+
+# Geocoding and mapping
+geopy
+googlemaps
+
+# Scheduling
+schedule
+
+# Web requests
+requests
+
+# Extra utilities
+python-socketio
+eventlet # For WebSocket support
+gunicorn # For production deployment
+
+# Download spacy model
+python -m spacy download en_core_web_sm
