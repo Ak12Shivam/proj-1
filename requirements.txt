@@ -32,4 +32,5 @@ eventlet # For WebSocket support
 gunicorn # For production deployment
 
 # Download spacy model
-python -m spacy download en_core_web_sm
+
+#python -m spacy download en_core_web_sm
